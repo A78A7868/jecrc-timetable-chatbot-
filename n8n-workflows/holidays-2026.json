@@ -1,0 +1,31 @@
+{
+  "year": 2026,
+  "institution": "JECRC University, Jaipur",
+  "holidays": [
+    { "date": "2026-01-14", "day": "Wednesday", "event": "Makar Sankranti" },
+    { "date": "2026-01-26", "day": "Monday", "event": "Republic Day" },
+    { "date": "2026-02-15", "day": "Sunday", "event": "Maha Shivratri" },
+    { "date": "2026-03-02", "day": "Monday", "event": "Holi Break" },
+    { "date": "2026-03-03", "day": "Tuesday", "event": "Holika Dahan" },
+    { "date": "2026-03-04", "day": "Wednesday", "event": "Dhulandi" },
+    { "date": "2026-03-21", "day": "Saturday", "event": "Eid-Ul-Fitr" },
+    { "date": "2026-03-26", "day": "Thursday", "event": "Ram Navami" },
+    { "date": "2026-03-31", "day": "Tuesday", "event": "Mahavir Jayanti" },
+    { "date": "2026-04-14", "day": "Tuesday", "event": "Dr. Ambedkar Jayanti" },
+    { "date": "2026-05-28", "day": "Thursday", "event": "Bakr Id/Eid-Ul-Zuha" },
+    { "date": "2026-08-15", "day": "Saturday", "event": "Independence Day" },
+    { "date": "2026-08-28", "day": "Friday", "event": "Raksha Bandhan" },
+    { "date": "2026-09-04", "day": "Friday", "event": "Janmashtami" },
+    { "date": "2026-10-02", "day": "Friday", "event": "Mahatma Gandhi Jayanti" },
+    { "date": "2026-10-20", "day": "Tuesday", "event": "Dussehra" },
+    { "date": "2026-10-29", "day": "Thursday", "event": "Karwa Chauth" },
+    { "date": "2026-11-06", "day": "Friday", "event": "Dhanteras" },
+    { "date": "2026-11-07", "day": "Saturday", "event": "Chhoti Deepawali" },
+    { "date": "2026-11-08", "day": "Sunday", "event": "Deepawali" },
+    { "date": "2026-11-09", "day": "Monday", "event": "Vishwakarma Day/Goverdhan Pooja" },
+    { "date": "2026-11-10", "day": "Tuesday", "event": "Deepawali Break" },
+    { "date": "2026-11-11", "day": "Wednesday", "event": "Bhai Dhooj" },
+    { "date": "2026-11-24", "day": "Tuesday", "event": "Guru Nanak Jayanti" },
+    { "date": "2026-12-25", "day": "Friday", "event": "Christmas Day" }
+  ]
+}

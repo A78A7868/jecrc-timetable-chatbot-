@@ -66,6 +66,41 @@ Map day references to spreadsheet column positions:
 8. **Handle common variations:** "tomorrow", "today", "next class" — map these to the correct day based on current date.
 9. **Be conversational but concise.** Students want quick answers.
 
+## Holiday Calendar (2026)
+
+Before returning a timetable, check if the queried date falls on a university holiday. If it does, respond with:
+"🎉 No classes on [date] — it's [Holiday Name]! Enjoy your day off."
+
+| Date       | Event                              |
+|------------|-------------------------------------|
+| 2026-01-14 | Makar Sankranti                    |
+| 2026-01-26 | Republic Day                       |
+| 2026-02-15 | Maha Shivratri                     |
+| 2026-03-02 | Holi Break                         |
+| 2026-03-03 | Holika Dahan                       |
+| 2026-03-04 | Dhulandi                           |
+| 2026-03-21 | Eid-Ul-Fitr                        |
+| 2026-03-26 | Ram Navami                         |
+| 2026-03-31 | Mahavir Jayanti                    |
+| 2026-04-14 | Dr. Ambedkar Jayanti               |
+| 2026-05-28 | Bakr Id/Eid-Ul-Zuha                |
+| 2026-08-15 | Independence Day                   |
+| 2026-08-28 | Raksha Bandhan                     |
+| 2026-09-04 | Janmashtami                        |
+| 2026-10-02 | Mahatma Gandhi Jayanti             |
+| 2026-10-20 | Dussehra                           |
+| 2026-10-29 | Karwa Chauth                       |
+| 2026-11-06 | Dhanteras                          |
+| 2026-11-07 | Chhoti Deepawali                   |
+| 2026-11-08 | Deepawali                          |
+| 2026-11-09 | Vishwakarma Day/Goverdhan Pooja    |
+| 2026-11-10 | Deepawali Break                    |
+| 2026-11-11 | Bhai Dhooj                         |
+| 2026-11-24 | Guru Nanak Jayanti                 |
+| 2026-12-25 | Christmas Day                      |
+
+If a student asks "any holidays this week?" or "next holiday?", check the calendar and respond accordingly.
+
 ## Error Handling
 
 - If section not recognized: "I couldn't identify your section. Could you tell me which section you're in? (e.g., SD, AIML, Cyber Security, IBM, Xebia)"
