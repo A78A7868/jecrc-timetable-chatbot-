@@ -12,23 +12,17 @@
       "name": "WhatsApp Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [250, 300],
-      "notes": "Receives incoming WhatsApp messages from Meta Cloud API"
+      "position": [250, 300]
     },
     {
       "parameters": {
         "conditions": {
-          "options": {
-            "caseSensitive": false
-          },
+          "options": { "caseSensitive": false },
           "conditions": [
             {
               "leftValue": "={{ $json.query?.['hub.mode'] }}",
               "rightValue": "subscribe",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
+              "operator": { "type": "string", "operation": "equals" }
             }
           ]
         }
@@ -37,49 +31,41 @@
       "name": "Is Verification?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [470, 300],
-      "notes": "Meta sends a GET request to verify the webhook endpoint"
+      "position": [470, 300]
     },
     {
       "parameters": {
         "respondWith": "text",
         "responseBody": "={{ $json.query?.['hub.challenge'] }}",
-        "options": {
-          "responseCode": 200
-        }
+        "options": { "responseCode": 200 }
       },
       "id": "verify-response",
       "name": "Verify Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [700, 200],
-      "notes": "Returns hub.challenge to complete Meta webhook verification"
+      "position": [700, 200]
     },
     {
       "parameters": {
-        "functionCode": "// Extract message from WhatsApp webhook payload\nconst body = $input.first().json.body;\n\n// Validate it's a message event\nif (!body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]) {\n  return [{ json: { skip: true } }];\n}\n\nconst change = body.entry[0].changes[0].value;\nconst message = change.messages[0];\nconst contact = change.contacts?.[0];\n\n// Only process text messages\nif (message.type !== 'text') {\n  return [{ json: {\n    skip: false,\n    phoneNumber: message.from,\n    response: 'I can only process text messages. Please type your timetable query.',\n    isUnsupported: true\n  }}];\n}\n\nreturn [{ json: {\n  skip: false,\n  isUnsupported: false,\n  phoneNumber: message.from,\n  messageId: message.id,\n  query: message.text.body,\n  contactName: contact?.profile?.name || 'Student',\n  timestamp: message.timestamp,\n  phoneNumberId: body.entry[0].changes[0].value.metadata.phone_number_id\n}}];"
+        "functionCode": "const body = $input.first().json.body;\n\nif (!body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]) {\n  return [{ json: { skip: true } }];\n}\n\nconst change = body.entry[0].changes[0].value;\nconst message = change.messages[0];\nconst contact = change.contacts?.[0];\n\nif (message.type !== 'text') {\n  return [{ json: {\n    skip: false,\n    phoneNumber: message.from,\n    response: 'I can only process text messages. Please type your timetable query.',\n    isUnsupported: true\n  }}];\n}\n\nreturn [{ json: {\n  skip: false,\n  isUnsupported: false,\n  phoneNumber: message.from,\n  messageId: message.id,\n  query: message.text.body,\n  contactName: contact?.profile?.name || 'Student',\n  timestamp: message.timestamp,\n  phoneNumberId: body.entry[0].changes[0].value.metadata.phone_number_id\n}}];"
       },
       "id": "extract-message",
       "name": "Extract Message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [700, 400],
-      "notes": "Parses WhatsApp webhook payload to extract student query"
+      "position": [700, 400]
     },
     {
       "parameters": {
         "respondWith": "text",
         "responseBody": "OK",
-        "options": {
-          "responseCode": 200
-        }
+        "options": { "responseCode": 200 }
       },
       "id": "ack-response",
       "name": "Acknowledge",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [920, 350],
-      "notes": "Immediately acknowledge to Meta (must respond within 5s)"
+      "position": [920, 350]
     },
     {
       "parameters": {
@@ -88,10 +74,7 @@
             {
               "leftValue": "={{ $json.skip }}",
               "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "equals"
-              }
+              "operator": { "type": "boolean", "operation": "equals" }
             }
           ]
         }
@@ -104,7 +87,7 @@
     },
     {
       "parameters": {
-        "functionCode": "// Query Pre-processing (same logic as web chat)\nconst input = $input.first().json;\nconst query = (input.query || '').trim().toLowerCase();\n\nconst sectionPatterns = {\n  'CSE_SD_Sec_A': /\\b(sd|software\\s*dev(elopment)?)\\b/i,\n  'CSE_AIML_Sec_A': /\\b(ai|aiml|artificial\\s*intelligence|machine\\s*learning|ml)\\b/i,\n  'CSE_CyberSec_Sec_A': /\\b(cys|cyber|cyber\\s*sec(urity)?)\\b/i,\n  'CSE_IBM_Sec_A': /\\b(ibm)\\b/i,\n  'CSE_Xebia_Sec_A': /\\b(xebia)\\b/i\n};\n\nconst dayPatterns = {\n  'Monday': /\\b(mon(day)?)\\b/i,\n  'Tuesday': /\\b(tue(sday)?)\\b/i,\n  'Wednesday': /\\b(wed(nesday)?)\\b/i,\n  'Thursday': /\\b(thu(rsday)?)\\b/i,\n  'Friday': /\\b(fri(day)?)\\b/i,\n  'Saturday': /\\b(sat(urday)?)\\b/i\n};\n\nlet detectedSection = null;\nlet detectedDay = null;\n\nfor (const [tab, pattern] of Object.entries(sectionPatterns)) {\n  if (pattern.test(query)) {\n    detectedSection = tab;\n    break;\n  }\n}\n\nfor (const [day, pattern] of Object.entries(dayPatterns)) {\n  if (pattern.test(query)) {\n    detectedDay = day;\n    break;\n  }\n}\n\nreturn [{\n  json: {\n    ...input,\n    originalQuery: query,\n    detectedSection,\n    detectedDay\n  }\n}];"
+        "functionCode": "// Same preprocessor as main workflow\nconst input = $input.first().json;\nconst query = (input.query || '').trim();\nconst queryLower = query.toLowerCase();\n\nconst sectionMap = [\n  { patterns: ['sd b', 'software dev b'], tab: 'CSE_SD_Sec_B', name: 'Software Development B' },\n  { patterns: ['sd', 'software dev', 'software development'], tab: 'CSE_SD_Sec_A', name: 'Software Development A' },\n  { patterns: ['ai b', 'aiml b'], tab: 'CSE_AIML_Sec_B', name: 'AIML B' },\n  { patterns: ['ai', 'aiml', 'artificial intelligence', 'machine learning', 'ml'], tab: 'CSE_AIML_Sec_A', name: 'AIML A' },\n  { patterns: ['cys b', 'cyber b'], tab: 'CSE_CyberSec_Sec_B', name: 'Cyber Security B' },\n  { patterns: ['cys', 'cyber', 'cyber security', 'cybersec'], tab: 'CSE_CyberSec_Sec_A', name: 'Cyber Security A' },\n  { patterns: ['ibm'], tab: 'CSE_IBM_Sec_A', name: 'IBM A' },\n  { patterns: ['xebia'], tab: 'CSE_Xebia_Sec_A', name: 'Xebia A' }\n];\n\nconst dayMap = {\n  'mon': 'Monday', 'monday': 'Monday', 'tue': 'Tuesday', 'tuesday': 'Tuesday',\n  'wed': 'Wednesday', 'wednesday': 'Wednesday', 'thu': 'Thursday', 'thursday': 'Thursday',\n  'fri': 'Friday', 'friday': 'Friday', 'sat': 'Saturday', 'saturday': 'Saturday'\n};\n\nconst dayToCol = {\n  'Monday': 'B', 'Tuesday': 'C', 'Wednesday': 'D',\n  'Thursday': 'E', 'Friday': 'F', 'Saturday': 'G'\n};\n\nconst timeToRow = {\n  '9': 3, '10': 4, '11': 5, '12': 6, '13': 7, '1': 7, '14': 8, '2': 8, '15': 9, '3': 9, '16': 10, '4': 10\n};\n\nlet detectedSection = null, detectedSectionName = null, detectedDay = null;\n\nfor (const sec of sectionMap) {\n  for (const p of sec.patterns) {\n    if (queryLower.includes(p)) { detectedSection = sec.tab; detectedSectionName = sec.name; break; }\n  }\n  if (detectedSection) break;\n}\n\nconst now = new Date();\nif (['today','aaj'].some(w => queryLower.includes(w))) {\n  detectedDay = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getDay()];\n} else if (['tomorrow','kal'].some(w => queryLower.includes(w))) {\n  const t = new Date(now); t.setDate(t.getDate()+1);\n  detectedDay = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][t.getDay()];\n} else {\n  for (const [k,v] of Object.entries(dayMap)) { if (queryLower.includes(k)) { detectedDay = v; break; } }\n}\n\nlet detectedRow = null;\nconst timeMatch = queryLower.match(/(\\d{1,2})\\s*(?::|\\s)?\\s*(\\d{2})?\\s*(am|pm)?/);\nif (timeMatch) {\n  let h = parseInt(timeMatch[1]);\n  if (timeMatch[3]==='pm' && h!==12) h+=12;\n  if (timeMatch[3]==='am' && h===12) h=0;\n  detectedRow = timeToRow[String(h)] || null;\n}\n\nlet cellRange = null, fullDayRange = null;\nif (detectedSection && detectedDay) {\n  const col = dayToCol[detectedDay];\n  if (col) {\n    if (detectedRow) cellRange = `${detectedSection}!${col}${detectedRow}`;\n    fullDayRange = `${detectedSection}!${col}3:${col}10`;\n  }\n}\n\nreturn [{ json: {\n  ...input,\n  originalQuery: query, detectedSection, detectedSectionName, detectedDay,\n  detectedRow, cellRange, fullDayRange,\n  needsSection: !detectedSection, needsDay: !detectedDay\n}}];"
       },
       "id": "wa-preprocessor",
       "name": "Query Preprocessor",
@@ -114,18 +97,88 @@
     },
     {
       "parameters": {
-        "model": "gemini-1.5-flash",
-        "options": {
-          "temperature": 0.1,
-          "maxOutputTokens": 1024
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.needsSection }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ]
         }
       },
-      "id": "wa-ai-agent",
-      "name": "AI Agent (Gemini)",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1.7,
-      "position": [1370, 500],
-      "notes": "Same Gemini agent as web chat — uses system prompt with section mapping + holidays"
+      "id": "wa-section-check",
+      "name": "Has Section?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1370, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v18.0/{{ $('Extract Message').item.json.phoneNumberId }}/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{ $('Extract Message').item.json.phoneNumber }}\",\n  \"type\": \"text\",\n  \"text\": { \"body\": \"I couldn't identify your section. Please specify:\\n\\n• SD (Software Development)\\n• AI / AIML\\n• CYS (Cyber Security)\\n• IBM\\n• Xebia\\n\\nExample: Monday schedule for SD section\" }\n}"
+      },
+      "id": "wa-ask-section",
+      "name": "Ask Section (WhatsApp)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1590, 400]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "sheetId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.GOOGLE_SHEETS_SPREADSHEET_ID }}"
+        },
+        "range": "={{ $json.fullDayRange || $json.cellRange }}",
+        "options": {
+          "valueRenderOption": "FORMATTED_VALUE",
+          "dateTimeRenderOption": "FORMATTED_STRING"
+        }
+      },
+      "id": "wa-sheets-read",
+      "name": "Google Sheets - Read Timetable",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1590, 600],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "CONFIGURE_ME",
+          "name": "Google Sheets OAuth2 — Configure in n8n Credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "models/gemini-1.5-flash",
+        "options": { "temperature": 0.1, "maxOutputTokens": 1024 },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a JECRC University timetable assistant responding via WhatsApp. Format responses for mobile readability.\n\nRULES:\n1. Use simple text formatting (no markdown, WhatsApp doesn't render it well).\n2. Use line breaks and emojis for structure.\n3. Each class: 📚 [Subject] | 👨‍🏫 [Faculty] | 🏫 [Room] | ⏰ [Time]\n4. Empty cells = Free Period.\n5. Keep responses under 500 characters when possible.\n6. For lab sessions spanning multiple slots, group them.\n\nTIME SLOTS: Row3=9-10AM, Row4=10-11AM, Row5=11-12PM, Row6=12-1PM, Row7=1-2PM(Lunch), Row8=2-3PM, Row9=3-4PM, Row10=4-5PM"
+            }
+          ]
+        }
+      },
+      "id": "wa-ai-formatter",
+      "name": "AI Formatter (Gemini)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [1810, 600],
+      "credentials": {
+        "googleGeminiApi": {
+          "id": "CONFIGURE_ME",
+          "name": "Gemini API Key — Configure in n8n Credentials"
+        }
+      }
     },
     {
       "parameters": {
@@ -136,22 +189,18 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
+            { "name": "Content-Type", "value": "application/json" }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{ $('Extract Message').item.json.phoneNumber }}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"preview_url\": false,\n    \"body\": \"{{ $json.output || $json.response || 'Sorry, I could not process your query.' }}\"\n  }\n}"
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{ $('Extract Message').item.json.phoneNumber }}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"preview_url\": false,\n    \"body\": \"{{ $json.output || $json.response || $json.text || 'Sorry, could not process your query. Try: Monday schedule for SD section' }}\"\n  }\n}"
       },
       "id": "send-whatsapp-reply",
       "name": "Send WhatsApp Reply",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1590, 500],
-      "notes": "Sends response back to student via Meta WhatsApp Cloud API"
+      "position": [2030, 600]
     }
   ],
   "connections": {
@@ -184,19 +233,26 @@
     },
     "Query Preprocessor": {
       "main": [
-        [{ "node": "AI Agent (Gemini)", "type": "main", "index": 0 }]
+        [{ "node": "Has Section?", "type": "main", "index": 0 }]
       ]
     },
-    "AI Agent (Gemini)": {
+    "Has Section?": {
+      "main": [
+        [{ "node": "Ask Section (WhatsApp)", "type": "main", "index": 0 }],
+        [{ "node": "Google Sheets - Read Timetable", "type": "main", "index": 0 }]
+      ]
+    },
+    "Google Sheets - Read Timetable": {
+      "main": [
+        [{ "node": "AI Formatter (Gemini)", "type": "main", "index": 0 }]
+      ]
+    },
+    "AI Formatter (Gemini)": {
       "main": [
         [{ "node": "Send WhatsApp Reply", "type": "main", "index": 0 }]
       ]
     }
   },
-  "settings": {
-    "executionOrder": "v1"
-  },
-  "meta": {
-    "instanceId": "jecrc-timetable-chatbot-whatsapp"
-  }
+  "settings": { "executionOrder": "v1" },
+  "meta": { "instanceId": "jecrc-timetable-chatbot-whatsapp" }
 }

@@ -9,18 +9,9 @@
         "options": {
           "responseHeaders": {
             "entries": [
-              {
-                "name": "Access-Control-Allow-Origin",
-                "value": "*"
-              },
-              {
-                "name": "Access-Control-Allow-Methods",
-                "value": "POST, OPTIONS"
-              },
-              {
-                "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type"
-              }
+              { "name": "Access-Control-Allow-Origin", "value": "*" },
+              { "name": "Access-Control-Allow-Methods", "value": "POST, OPTIONS" },
+              { "name": "Access-Control-Allow-Headers", "value": "Content-Type" }
             ]
           }
         }
@@ -33,7 +24,7 @@
     },
     {
       "parameters": {
-        "functionCode": "// Query Pre-processing Module\nconst input = $input.first().json;\nconst query = (input.body?.query || input.query || '').trim().toLowerCase();\n\n// Extract section identifiers\nconst sectionPatterns = {\n  'CSE_SD_Sec_A': /\\b(sd|software\\s*dev(elopment)?)\\b/i,\n  'CSE_AIML_Sec_A': /\\b(ai|aiml|artificial\\s*intelligence|machine\\s*learning|ml)\\b/i,\n  'CSE_CyberSec_Sec_A': /\\b(cys|cyber|cyber\\s*sec(urity)?)\\b/i,\n  'CSE_IBM_Sec_A': /\\b(ibm)\\b/i,\n  'CSE_Xebia_Sec_A': /\\b(xebia)\\b/i\n};\n\n// Extract day\nconst dayPatterns = {\n  'Monday': /\\b(mon(day)?)\\b/i,\n  'Tuesday': /\\b(tue(sday)?)\\b/i,\n  'Wednesday': /\\b(wed(nesday)?)\\b/i,\n  'Thursday': /\\b(thu(rsday)?)\\b/i,\n  'Friday': /\\b(fri(day)?)\\b/i,\n  'Saturday': /\\b(sat(urday)?)\\b/i\n};\n\n// Extract time\nconst timeMatch = query.match(/(\\d{1,2})\\s*(?::|\\s)\\s*(\\d{2})?\\s*(am|pm)?/i);\n\nlet detectedSection = null;\nlet detectedDay = null;\nlet detectedTime = null;\n\nfor (const [tab, pattern] of Object.entries(sectionPatterns)) {\n  if (pattern.test(query)) {\n    detectedSection = tab;\n    break;\n  }\n}\n\nfor (const [day, pattern] of Object.entries(dayPatterns)) {\n  if (pattern.test(query)) {\n    detectedDay = day;\n    break;\n  }\n}\n\nif (timeMatch) {\n  let hour = parseInt(timeMatch[1]);\n  const period = timeMatch[3]?.toLowerCase();\n  if (period === 'pm' && hour !== 12) hour += 12;\n  if (period === 'am' && hour === 12) hour = 0;\n  detectedTime = `${hour}:00`;\n}\n\nreturn [{\n  json: {\n    originalQuery: query,\n    detectedSection,\n    detectedDay,\n    detectedTime,\n    timestamp: new Date().toISOString()\n  }\n}];"
+        "functionCode": "// ============================================\n// Module 2: Query Pre-processing & Intent Extraction\n// ============================================\nconst input = $input.first().json;\nconst query = (input.body?.query || input.query || '').trim();\nconst queryLower = query.toLowerCase();\n\n// --- Section Detection ---\nconst sectionMap = [\n  { patterns: ['sd', 'software dev', 'software development'], tab: 'CSE_SD_Sec_A', name: 'Software Development A' },\n  { patterns: ['sd b', 'software dev b'], tab: 'CSE_SD_Sec_B', name: 'Software Development B' },\n  { patterns: ['ai', 'aiml', 'artificial intelligence', 'machine learning', 'ml'], tab: 'CSE_AIML_Sec_A', name: 'AIML A' },\n  { patterns: ['ai b', 'aiml b'], tab: 'CSE_AIML_Sec_B', name: 'AIML B' },\n  { patterns: ['cys', 'cyber', 'cyber security', 'cybersec'], tab: 'CSE_CyberSec_Sec_A', name: 'Cyber Security A' },\n  { patterns: ['cys b', 'cyber b'], tab: 'CSE_CyberSec_Sec_B', name: 'Cyber Security B' },\n  { patterns: ['ibm'], tab: 'CSE_IBM_Sec_A', name: 'IBM A' },\n  { patterns: ['xebia'], tab: 'CSE_Xebia_Sec_A', name: 'Xebia A' }\n];\n\n// --- Day Detection ---\nconst dayMap = {\n  'mon': 'Monday', 'monday': 'Monday',\n  'tue': 'Tuesday', 'tuesday': 'Tuesday',\n  'wed': 'Wednesday', 'wednesday': 'Wednesday',\n  'thu': 'Thursday', 'thursday': 'Thursday',\n  'fri': 'Friday', 'friday': 'Friday',\n  'sat': 'Saturday', 'saturday': 'Saturday'\n};\n\n// --- Time Slot to Row Mapping ---\nconst timeToRow = {\n  '9': 3, '10': 4, '11': 5, '12': 6,\n  '13': 7, '1': 7, '14': 8, '2': 8,\n  '15': 9, '3': 9, '16': 10, '4': 10\n};\n\n// --- Day to Column Mapping ---\nconst dayToCol = {\n  'Monday': 'B', 'Tuesday': 'C', 'Wednesday': 'D',\n  'Thursday': 'E', 'Friday': 'F', 'Saturday': 'G'\n};\n\n// --- Holiday Detection ---\nconst holidays = [\n  { date: '2026-01-14', event: 'Makar Sankranti' },\n  { date: '2026-01-26', event: 'Republic Day' },\n  { date: '2026-02-15', event: 'Maha Shivratri' },\n  { date: '2026-03-02', event: 'Holi Break' },\n  { date: '2026-03-03', event: 'Holika Dahan' },\n  { date: '2026-03-04', event: 'Dhulandi' },\n  { date: '2026-03-21', event: 'Eid-Ul-Fitr' },\n  { date: '2026-03-26', event: 'Ram Navami' },\n  { date: '2026-03-31', event: 'Mahavir Jayanti' },\n  { date: '2026-04-14', event: 'Dr. Ambedkar Jayanti' },\n  { date: '2026-05-28', event: 'Bakr Id/Eid-Ul-Zuha' },\n  { date: '2026-08-15', event: 'Independence Day' },\n  { date: '2026-08-28', event: 'Raksha Bandhan' },\n  { date: '2026-09-04', event: 'Janmashtami' },\n  { date: '2026-10-02', event: 'Mahatma Gandhi Jayanti' },\n  { date: '2026-10-20', event: 'Dussehra' },\n  { date: '2026-10-29', event: 'Karwa Chauth' },\n  { date: '2026-11-06', event: 'Dhanteras' },\n  { date: '2026-11-07', event: 'Chhoti Deepawali' },\n  { date: '2026-11-08', event: 'Deepawali' },\n  { date: '2026-11-09', event: 'Vishwakarma Day/Goverdhan Pooja' },\n  { date: '2026-11-10', event: 'Deepawali Break' },\n  { date: '2026-11-11', event: 'Bhai Dhooj' },\n  { date: '2026-11-24', event: 'Guru Nanak Jayanti' },\n  { date: '2026-12-25', event: 'Christmas Day' }\n];\n\n// Detect section (check longer patterns first)\nlet detectedSection = null;\nlet detectedSectionName = null;\nfor (const sec of sectionMap) {\n  for (const p of sec.patterns) {\n    if (queryLower.includes(p)) {\n      detectedSection = sec.tab;\n      detectedSectionName = sec.name;\n      break;\n    }\n  }\n  if (detectedSection) break;\n}\n\n// Detect day\nlet detectedDay = null;\nconst todayWords = ['today', 'aaj'];\nconst tomorrowWords = ['tomorrow', 'kal'];\nconst now = new Date();\n\nif (todayWords.some(w => queryLower.includes(w))) {\n  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];\n  detectedDay = days[now.getDay()];\n} else if (tomorrowWords.some(w => queryLower.includes(w))) {\n  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];\n  const tomorrow = new Date(now);\n  tomorrow.setDate(tomorrow.getDate() + 1);\n  detectedDay = days[tomorrow.getDay()];\n} else {\n  for (const [key, day] of Object.entries(dayMap)) {\n    if (queryLower.includes(key)) {\n      detectedDay = day;\n      break;\n    }\n  }\n}\n\n// Detect time\nlet detectedTime = null;\nlet detectedRow = null;\nconst timeMatch = queryLower.match(/(\\d{1,2})\\s*(?::|\\s)?\\s*(\\d{2})?\\s*(am|pm)?/);\nif (timeMatch) {\n  let hour = parseInt(timeMatch[1]);\n  const period = timeMatch[3];\n  if (period === 'pm' && hour !== 12) hour += 12;\n  if (period === 'am' && hour === 12) hour = 0;\n  detectedTime = `${hour}:00`;\n  detectedRow = timeToRow[String(hour)] || null;\n}\n\n// Build cell range\nlet cellRange = null;\nlet fullDayRange = null;\nif (detectedSection && detectedDay) {\n  const col = dayToCol[detectedDay];\n  if (col) {\n    if (detectedRow) {\n      cellRange = `${detectedSection}!${col}${detectedRow}`;\n    }\n    fullDayRange = `${detectedSection}!${col}3:${col}10`;\n  }\n}\n\n// Check holidays\nlet isHoliday = false;\nlet holidayEvent = null;\nconst todayStr = now.toISOString().split('T')[0];\nconst holiday = holidays.find(h => h.date === todayStr);\nif (holiday && todayWords.some(w => queryLower.includes(w))) {\n  isHoliday = true;\n  holidayEvent = holiday.event;\n}\n\nreturn [{\n  json: {\n    originalQuery: query,\n    detectedSection,\n    detectedSectionName,\n    detectedDay,\n    detectedTime,\n    detectedRow,\n    cellRange,\n    fullDayRange,\n    isHoliday,\n    holidayEvent,\n    needsSection: !detectedSection,\n    needsDay: !detectedDay,\n    timestamp: new Date().toISOString()\n  }\n}];"
       },
       "id": "query-preprocessor",
       "name": "Query Preprocessor",
@@ -43,7 +34,90 @@
     },
     {
       "parameters": {
-        "model": "gemini-1.5-flash",
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.isHoliday }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ]
+        }
+      },
+      "id": "holiday-check",
+      "name": "Is Holiday?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const input = $input.first().json;\nreturn [{\n  json: {\n    response: `🎉 No classes today — it's ${input.holidayEvent}! Enjoy your day off.`,\n    status: 'holiday',\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "holiday-response",
+      "name": "Holiday Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [910, 180]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.needsSection }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ]
+        }
+      },
+      "id": "section-check",
+      "name": "Has Section?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [910, 420]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{\n  json: {\n    response: \"I couldn't identify your section. Which section are you in?\\n\\nSupported sections:\\n• SD (Software Development)\\n• AI / AIML\\n• CYS (Cyber Security)\\n• IBM\\n• Xebia\\n\\nExample: \\\"Monday schedule for SD section\\\"\",\n    status: 'missing_section',\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "ask-section",
+      "name": "Ask Section",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1130, 320]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "sheetId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.GOOGLE_SHEETS_SPREADSHEET_ID }}"
+        },
+        "range": "={{ $json.fullDayRange || $json.cellRange }}",
+        "options": {
+          "valueRenderOption": "FORMATTED_VALUE",
+          "dateTimeRenderOption": "FORMATTED_STRING"
+        }
+      },
+      "id": "google-sheets-read",
+      "name": "Google Sheets - Read Timetable",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1130, 520],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "CONFIGURE_ME",
+          "name": "Google Sheets OAuth2 — Configure in n8n Credentials"
+        }
+      },
+      "notes": "SETUP: Create Google Sheets OAuth2 credential in n8n and link it here"
+    },
+    {
+      "parameters": {
+        "model": "models/gemini-1.5-flash",
         "options": {
           "temperature": 0.1,
           "maxOutputTokens": 1024
@@ -52,27 +126,33 @@
           "values": [
             {
               "role": "system",
-              "content": "You are an academic scheduling assistant for JECRC University. Your task is to interpret student queries about timetables and retrieve the correct information from the university Google Sheet.\n\nSECTION MAPPING TABLE:\n- \"SD\" or \"Software Development\" → Tab: CSE_SD_Sec_A\n- \"AI\" or \"AIML\" → Tab: CSE_AIML_Sec_A\n- \"CYS\" or \"Cyber Security\" → Tab: CSE_CyberSec_Sec_A\n- \"IBM\" → Tab: CSE_IBM_Sec_A\n- \"Xebia\" → Tab: CSE_Xebia_Sec_A\n\nRULES:\n1. Always identify the section, day, and time slot from the query.\n2. Use the mapping table to determine the correct sheet tab.\n3. For lab sessions, request a merged cell range (e.g., rows 5-7).\n4. If a cell is empty, return \"Free Period / No Class Scheduled\".\n5. Format response as: Subject | Faculty | Room | Time Slot.\n6. Be conversational but concise."
+              "content": "You are a JECRC University timetable assistant. You receive raw timetable data from Google Sheets and format it into a clean, student-friendly response.\n\nFORMATTING RULES:\n1. Present each class as:\n   📚 Subject: [name]\n   👨‍🏫 Faculty: [name]\n   🏫 Room: [number]\n   ⏰ Time: [slot]\n\n2. For full day schedules, list all classes in order from 9 AM to 5 PM.\n3. If a cell is empty, show it as: \"Free Period / No Class Scheduled\"\n4. For lab sessions (spanning multiple rows), group them as a single entry and note the duration.\n5. Be conversational and brief.\n6. If data seems incomplete or empty, say: \"No classes found for that slot. It might be a free period!\"\n\nTIME SLOT REFERENCE:\nRow 3 = 9:00-10:00 AM\nRow 4 = 10:00-11:00 AM\nRow 5 = 11:00-12:00 PM\nRow 6 = 12:00-1:00 PM\nRow 7 = 1:00-2:00 PM (usually Lunch)\nRow 8 = 2:00-3:00 PM\nRow 9 = 3:00-4:00 PM\nRow 10 = 4:00-5:00 PM"
             }
           ]
         }
       },
-      "id": "ai-agent",
-      "name": "AI Agent (Gemini)",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1.7,
-      "position": [700, 300],
-      "notes": "Configure with your Gemini API credentials in n8n Credentials Manager"
+      "id": "ai-formatter",
+      "name": "AI Formatter (Gemini)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [1350, 520],
+      "credentials": {
+        "googleGeminiApi": {
+          "id": "CONFIGURE_ME",
+          "name": "Gemini API Key — Configure in n8n Credentials"
+        }
+      },
+      "notes": "SETUP: Add Gemini API credential in n8n (Google AI Studio key)"
     },
     {
       "parameters": {
-        "functionCode": "// Response Formatter Module\nconst agentResponse = $input.first().json;\n\nlet response = agentResponse.output || agentResponse.response || agentResponse.text || 'Unable to process your query.';\n\n// Clean up any raw formatting artifacts\nresponse = response.replace(/```/g, '').trim();\n\nreturn [{\n  json: {\n    response: response,\n    status: 'success',\n    timestamp: new Date().toISOString()\n  }\n}];"
+        "functionCode": "// ============================================\n// Module 5: Response Formatting & Delivery\n// ============================================\nconst aiResponse = $input.first().json;\nconst preprocessed = $('Query Preprocessor').first().json;\n\nlet response = aiResponse.output || aiResponse.response || aiResponse.text || '';\n\n// Clean formatting\nresponse = response.replace(/```/g, '').trim();\n\n// Add section context header\nif (preprocessed.detectedSectionName && preprocessed.detectedDay) {\n  const header = `📅 ${preprocessed.detectedDay} — ${preprocessed.detectedSectionName}`;\n  if (!response.includes(preprocessed.detectedDay)) {\n    response = `${header}\\n\\n${response}`;\n  }\n}\n\nif (!response) {\n  response = 'Sorry, I could not retrieve the timetable. Please try again with a specific section and day.';\n}\n\nreturn [{\n  json: {\n    response,\n    status: 'success',\n    section: preprocessed.detectedSection,\n    day: preprocessed.detectedDay,\n    timestamp: new Date().toISOString()\n  }\n}];"
       },
       "id": "response-formatter",
       "name": "Response Formatter",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [930, 300]
+      "position": [1570, 520]
     }
   ],
   "connections": {
@@ -83,10 +163,27 @@
     },
     "Query Preprocessor": {
       "main": [
-        [{ "node": "AI Agent (Gemini)", "type": "main", "index": 0 }]
+        [{ "node": "Is Holiday?", "type": "main", "index": 0 }]
       ]
     },
-    "AI Agent (Gemini)": {
+    "Is Holiday?": {
+      "main": [
+        [{ "node": "Holiday Response", "type": "main", "index": 0 }],
+        [{ "node": "Has Section?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Has Section?": {
+      "main": [
+        [{ "node": "Ask Section", "type": "main", "index": 0 }],
+        [{ "node": "Google Sheets - Read Timetable", "type": "main", "index": 0 }]
+      ]
+    },
+    "Google Sheets - Read Timetable": {
+      "main": [
+        [{ "node": "AI Formatter (Gemini)", "type": "main", "index": 0 }]
+      ]
+    },
+    "AI Formatter (Gemini)": {
       "main": [
         [{ "node": "Response Formatter", "type": "main", "index": 0 }]
       ]
