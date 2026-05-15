@@ -1,0 +1,101 @@
+{
+  "name": "JECRC Timetable ChatBot - Main Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatbot",
+        "responseMode": "lastNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Query Pre-processing Module\nconst input = $input.first().json;\nconst query = (input.body?.query || input.query || '').trim().toLowerCase();\n\n// Extract section identifiers\nconst sectionPatterns = {\n  'CSE_SD_Sec_A': /\\b(sd|software\\s*dev(elopment)?)\\b/i,\n  'CSE_AIML_Sec_A': /\\b(ai|aiml|artificial\\s*intelligence|machine\\s*learning|ml)\\b/i,\n  'CSE_CyberSec_Sec_A': /\\b(cys|cyber|cyber\\s*sec(urity)?)\\b/i,\n  'CSE_IBM_Sec_A': /\\b(ibm)\\b/i,\n  'CSE_Xebia_Sec_A': /\\b(xebia)\\b/i\n};\n\n// Extract day\nconst dayPatterns = {\n  'Monday': /\\b(mon(day)?)\\b/i,\n  'Tuesday': /\\b(tue(sday)?)\\b/i,\n  'Wednesday': /\\b(wed(nesday)?)\\b/i,\n  'Thursday': /\\b(thu(rsday)?)\\b/i,\n  'Friday': /\\b(fri(day)?)\\b/i,\n  'Saturday': /\\b(sat(urday)?)\\b/i\n};\n\n// Extract time\nconst timeMatch = query.match(/(\\d{1,2})\\s*(?::|\\s)\\s*(\\d{2})?\\s*(am|pm)?/i);\n\nlet detectedSection = null;\nlet detectedDay = null;\nlet detectedTime = null;\n\nfor (const [tab, pattern] of Object.entries(sectionPatterns)) {\n  if (pattern.test(query)) {\n    detectedSection = tab;\n    break;\n  }\n}\n\nfor (const [day, pattern] of Object.entries(dayPatterns)) {\n  if (pattern.test(query)) {\n    detectedDay = day;\n    break;\n  }\n}\n\nif (timeMatch) {\n  let hour = parseInt(timeMatch[1]);\n  const period = timeMatch[3]?.toLowerCase();\n  if (period === 'pm' && hour !== 12) hour += 12;\n  if (period === 'am' && hour === 12) hour = 0;\n  detectedTime = `${hour}:00`;\n}\n\nreturn [{\n  json: {\n    originalQuery: query,\n    detectedSection,\n    detectedDay,\n    detectedTime,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "query-preprocessor",
+      "name": "Query Preprocessor",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "model": "gemini-1.5-flash",
+        "options": {
+          "temperature": 0.1,
+          "maxOutputTokens": 1024
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an academic scheduling assistant for JECRC University. Your task is to interpret student queries about timetables and retrieve the correct information from the university Google Sheet.\n\nSECTION MAPPING TABLE:\n- \"SD\" or \"Software Development\" → Tab: CSE_SD_Sec_A\n- \"AI\" or \"AIML\" → Tab: CSE_AIML_Sec_A\n- \"CYS\" or \"Cyber Security\" → Tab: CSE_CyberSec_Sec_A\n- \"IBM\" → Tab: CSE_IBM_Sec_A\n- \"Xebia\" → Tab: CSE_Xebia_Sec_A\n\nRULES:\n1. Always identify the section, day, and time slot from the query.\n2. Use the mapping table to determine the correct sheet tab.\n3. For lab sessions, request a merged cell range (e.g., rows 5-7).\n4. If a cell is empty, return \"Free Period / No Class Scheduled\".\n5. Format response as: Subject | Faculty | Room | Time Slot.\n6. Be conversational but concise."
+            }
+          ]
+        }
+      },
+      "id": "ai-agent",
+      "name": "AI Agent (Gemini)",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [700, 300],
+      "notes": "Configure with your Gemini API credentials in n8n Credentials Manager"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Response Formatter Module\nconst agentResponse = $input.first().json;\n\nlet response = agentResponse.output || agentResponse.response || agentResponse.text || 'Unable to process your query.';\n\n// Clean up any raw formatting artifacts\nresponse = response.replace(/```/g, '').trim();\n\nreturn [{\n  json: {\n    response: response,\n    status: 'success',\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "response-formatter",
+      "name": "Response Formatter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [930, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [{ "node": "Query Preprocessor", "type": "main", "index": 0 }]
+      ]
+    },
+    "Query Preprocessor": {
+      "main": [
+        [{ "node": "AI Agent (Gemini)", "type": "main", "index": 0 }]
+      ]
+    },
+    "AI Agent (Gemini)": {
+      "main": [
+        [{ "node": "Response Formatter", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "instanceId": "jecrc-timetable-chatbot"
+  }
+}

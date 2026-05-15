@@ -1,0 +1,32 @@
+# Environment variables
+.env
+*.env.local
+
+# Node modules
+node_modules/
+
+# n8n data
+n8n-data/
+.n8n/
+
+# Docker volumes
+docker/data/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Credentials (NEVER commit these)
+credentials.json
+token.json
+service-account.json
+*.pem
+*.key

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JECRC Timetable ChatBot</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="header-info">
+                <div class="bot-avatar">🎓</div>
+                <div class="header-text">
+                    <h1>JECRC Timetable Assistant</h1>
+                    <p class="status">Online • Ask me about your schedule</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot-message">
+                <div class="message-content">
+                    <p>Hi! I'm your JECRC Timetable Assistant. I can help you find your class schedule, lab timings, and free periods.</p>
+                    <p>Try asking me something like:</p>
+                    <ul>
+                        <li>"What class do I have on Monday at 9 AM for SD section?"</li>
+                        <li>"Show me Tuesday schedule for AIML"</li>
+                        <li>"Is there a lab on Wednesday for Cyber Security?"</li>
+                    </ul>
+                </div>
+                <span class="message-time">Now</span>
+            </div>
+        </div>
+
+        <div class="chat-input-container">
+            <form id="chatForm" class="chat-input-form">
+                <input
+                    type="text"
+                    id="messageInput"
+                    class="chat-input"
+                    placeholder="Ask about your timetable..."
+                    autocomplete="off"
+                    required
+                >
+                <button type="submit" class="send-btn" id="sendBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/chat.js"></script>
+</body>
+</html>
