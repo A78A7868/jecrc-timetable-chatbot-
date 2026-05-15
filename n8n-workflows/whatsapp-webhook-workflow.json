@@ -1,0 +1,202 @@
+{
+  "name": "JECRC ChatBot - WhatsApp Integration",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "={{$json.method}}",
+        "path": "whatsapp",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "whatsapp-webhook",
+      "name": "WhatsApp Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "notes": "Receives incoming WhatsApp messages from Meta Cloud API"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.query?.['hub.mode'] }}",
+              "rightValue": "subscribe",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "verification-check",
+      "name": "Is Verification?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [470, 300],
+      "notes": "Meta sends a GET request to verify the webhook endpoint"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query?.['hub.challenge'] }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "verify-response",
+      "name": "Verify Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [700, 200],
+      "notes": "Returns hub.challenge to complete Meta webhook verification"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract message from WhatsApp webhook payload\nconst body = $input.first().json.body;\n\n// Validate it's a message event\nif (!body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]) {\n  return [{ json: { skip: true } }];\n}\n\nconst change = body.entry[0].changes[0].value;\nconst message = change.messages[0];\nconst contact = change.contacts?.[0];\n\n// Only process text messages\nif (message.type !== 'text') {\n  return [{ json: {\n    skip: false,\n    phoneNumber: message.from,\n    response: 'I can only process text messages. Please type your timetable query.',\n    isUnsupported: true\n  }}];\n}\n\nreturn [{ json: {\n  skip: false,\n  isUnsupported: false,\n  phoneNumber: message.from,\n  messageId: message.id,\n  query: message.text.body,\n  contactName: contact?.profile?.name || 'Student',\n  timestamp: message.timestamp,\n  phoneNumberId: body.entry[0].changes[0].value.metadata.phone_number_id\n}}];"
+      },
+      "id": "extract-message",
+      "name": "Extract Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 400],
+      "notes": "Parses WhatsApp webhook payload to extract student query"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "OK",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "ack-response",
+      "name": "Acknowledge",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [920, 350],
+      "notes": "Immediately acknowledge to Meta (must respond within 5s)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "skip-check",
+      "name": "Should Skip?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [920, 500]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Query Pre-processing (same logic as web chat)\nconst input = $input.first().json;\nconst query = (input.query || '').trim().toLowerCase();\n\nconst sectionPatterns = {\n  'CSE_SD_Sec_A': /\\b(sd|software\\s*dev(elopment)?)\\b/i,\n  'CSE_AIML_Sec_A': /\\b(ai|aiml|artificial\\s*intelligence|machine\\s*learning|ml)\\b/i,\n  'CSE_CyberSec_Sec_A': /\\b(cys|cyber|cyber\\s*sec(urity)?)\\b/i,\n  'CSE_IBM_Sec_A': /\\b(ibm)\\b/i,\n  'CSE_Xebia_Sec_A': /\\b(xebia)\\b/i\n};\n\nconst dayPatterns = {\n  'Monday': /\\b(mon(day)?)\\b/i,\n  'Tuesday': /\\b(tue(sday)?)\\b/i,\n  'Wednesday': /\\b(wed(nesday)?)\\b/i,\n  'Thursday': /\\b(thu(rsday)?)\\b/i,\n  'Friday': /\\b(fri(day)?)\\b/i,\n  'Saturday': /\\b(sat(urday)?)\\b/i\n};\n\nlet detectedSection = null;\nlet detectedDay = null;\n\nfor (const [tab, pattern] of Object.entries(sectionPatterns)) {\n  if (pattern.test(query)) {\n    detectedSection = tab;\n    break;\n  }\n}\n\nfor (const [day, pattern] of Object.entries(dayPatterns)) {\n  if (pattern.test(query)) {\n    detectedDay = day;\n    break;\n  }\n}\n\nreturn [{\n  json: {\n    ...input,\n    originalQuery: query,\n    detectedSection,\n    detectedDay\n  }\n}];"
+      },
+      "id": "wa-preprocessor",
+      "name": "Query Preprocessor",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1150, 500]
+    },
+    {
+      "parameters": {
+        "model": "gemini-1.5-flash",
+        "options": {
+          "temperature": 0.1,
+          "maxOutputTokens": 1024
+        }
+      },
+      "id": "wa-ai-agent",
+      "name": "AI Agent (Gemini)",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [1370, 500],
+      "notes": "Same Gemini agent as web chat — uses system prompt with section mapping + holidays"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v18.0/{{ $('Extract Message').item.json.phoneNumberId }}/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{ $('Extract Message').item.json.phoneNumber }}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"preview_url\": false,\n    \"body\": \"{{ $json.output || $json.response || 'Sorry, I could not process your query.' }}\"\n  }\n}"
+      },
+      "id": "send-whatsapp-reply",
+      "name": "Send WhatsApp Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1590, 500],
+      "notes": "Sends response back to student via Meta WhatsApp Cloud API"
+    }
+  ],
+  "connections": {
+    "WhatsApp Webhook": {
+      "main": [
+        [{ "node": "Is Verification?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Is Verification?": {
+      "main": [
+        [{ "node": "Verify Response", "type": "main", "index": 0 }],
+        [{ "node": "Extract Message", "type": "main", "index": 0 }]
+      ]
+    },
+    "Extract Message": {
+      "main": [
+        [{ "node": "Acknowledge", "type": "main", "index": 0 }]
+      ]
+    },
+    "Acknowledge": {
+      "main": [
+        [{ "node": "Should Skip?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Should Skip?": {
+      "main": [
+        [],
+        [{ "node": "Query Preprocessor", "type": "main", "index": 0 }]
+      ]
+    },
+    "Query Preprocessor": {
+      "main": [
+        [{ "node": "AI Agent (Gemini)", "type": "main", "index": 0 }]
+      ]
+    },
+    "AI Agent (Gemini)": {
+      "main": [
+        [{ "node": "Send WhatsApp Reply", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "instanceId": "jecrc-timetable-chatbot-whatsapp"
+  }
+}
