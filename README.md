@@ -142,7 +142,7 @@ docker-compose up -d
 
 - **Varishtha Joshi** (23BCON0383)
 - **Anand Krishna GR Nair** (23BCON1613)
-- **Amit Jiji Varghese** (23BON0202)
+- **Amit Jiji Varghese** (23BCON0202)
 
 **Supervisor:** Mr. Ratish Kumar, Assistant Professor – II, Dept. of CSE, JECRC University
 
