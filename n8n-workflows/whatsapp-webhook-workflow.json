@@ -194,14 +194,14 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer EAAj1IabOkvYBRWlKLB7H0jNL9gHoxMB7ArZCkMZBb5CPkd0buTNmTjtNdjvFgMpNyRI1EHMkTutAPB3VJ3enlXxkjM0OIpWP4RjUZCwfzLZA7pCCZCUt8bZAZBQYotKZB6uQ6CK20JBFZBxlZCjUy9Va5ekuGDVTvh1jVje3rOTf7CDBe8zpVgcB6zzIyIT882GNWwwOcu2aKMj1TJu1vZBgGxH60pHa7PAZAnbDqQGuP0d7RRlxZA7HSaNeQpeLAvXvSb0LhjqYO18r4uci5pZCWgRA15mhKhVwZDZD"
+              "value": "=Bearer EAAj1IabOkvYBRXsMnGnd9azwAMZCpgEnvAZCiJifXehWlF97bhheDZA8O1GIpET6SK6B1al6lUeSfwQ3NDE7YRiDPeexYtcWYR12d48qutKQ6CZBf50LWUNiZBT5kqISh8g4whZC3K1LZBlgXKE55AOcQrPBKU6oKNsS13qinkzieQtuqIi3Ckh8Dhh5C3EoPs06HgSRpp8iUgvdCCjHRxn1UyzZCiU5Gil8YJN9Jrv60MyZAVNwuglXXLxEit7wZAc2WPCbGjLmNRLisuHHLVqYt8fMQk"
             },
             { "name": "Content-Type", "value": "application/json" }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"recipient_type\": \"individual\",\n  \"to\": \"{{ $json.phoneNumber }}\",\n  \"type\": \"text\",\n  \"text\": { \"preview_url\": false, \"body\": \"{{ $json.response }}\" }\n}",
+        "jsonBody": "={{ { messaging_product: 'whatsapp', recipient_type: 'individual', to: $json.phoneNumber, type: 'text', text: { preview_url: false, body: $json.response } } }}",
         "options": {}
       },
       "id": "send-reply",
