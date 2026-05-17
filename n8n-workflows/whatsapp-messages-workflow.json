@@ -1,6 +1,6 @@
 {
   "id": "3",
-  "name": "JECRC WhatsApp - Messages",
+  "name": "JECRC WhatsApp - Messages (Simple)",
   "nodes": [
     {
       "parameters": {
@@ -42,11 +42,7 @@
       "parameters": {
         "conditions": {
           "conditions": [
-            {
-              "leftValue": "={{ $json.skip }}",
-              "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equals" }
-            }
+            { "leftValue": "={{ $json.skip }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
           ]
         }
       },
@@ -60,11 +56,7 @@
       "parameters": {
         "conditions": {
           "conditions": [
-            {
-              "leftValue": "={{ $json.isUnsupported }}",
-              "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equals" }
-            }
+            { "leftValue": "={{ $json.isUnsupported }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
           ]
         }
       },
@@ -76,69 +68,9 @@
     },
     {
       "parameters": {
-        "authentication": "serviceAccount",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1IvCqMa-qFW4dxjMVZAeZwgLb7kKaoA9hUjsNK0M_890/edit",
-          "mode": "url"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "Registered_Students",
-          "mode": "name"
-        },
-        "options": {}
-      },
-      "continueOnFail": true,
-      "id": "check-registration",
-      "name": "Check Registration",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [1140, 400],
-      "credentials": {
-        "googleApi": {
-          "id": "hUoDZ9uB4WIQIviJ",
-          "name": "Google Sheets account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "const msgData = $('Extract Message').first().json;\nconst query = (msgData.query || '').trim();\n\n// Look for this phone number in the registered students list\nlet registrationRow = null;\ntry {\n  const rows = $input.all();\n  const match = rows.find(r => String(r.json.WhatsApp_Number || '').trim() === String(msgData.phoneNumber).trim());\n  if (match) registrationRow = match.json;\n} catch(e) {}\n\n// Registered path\nif (registrationRow) {\n  return [{ json: {\n    isRegistered: true,\n    action: 'registered',\n    phoneNumber: msgData.phoneNumber,\n    phoneNumberId: msgData.phoneNumberId,\n    contactName: msgData.contactName,\n    query: msgData.query,\n    isInteractive: msgData.isInteractive,\n    selectionId: msgData.selectionId,\n    selectionTitle: msgData.selectionTitle,\n    savedSection: registrationRow.Sheet_Tab,\n    savedSectionName: registrationRow.Section_Name,\n    savedRollNumber: registrationRow.Roll_Number,\n  }}];\n}\n\n// Not registered: parse roll number + section from the message\nconst rollMatch = query.match(/\\b(\\d{2}BCON\\d{4})\\b/i);\nconst rollNumber = rollMatch ? rollMatch[1].toUpperCase() : null;\n\nconst sectionMap = [\n  { re: /\\bsec[\\s-]?sk\\b|\\bsection\\s+sk\\b/i, tab: 'Sec-SK', name: 'Section SK' },\n  { re: /\\bsd\\s+b\\b|\\bsoftware\\s+(dev|development)\\s+b\\b/i, tab: 'CSE_SD_Sec_B', name: 'Software Dev (Sec B)' },\n  { re: /\\bsd\\b|\\bsoftware\\s+(dev|development)\\b/i, tab: 'CSE_SD_Sec_A', name: 'Software Dev (Sec A)' },\n  { re: /\\baiml\\s+b\\b|\\bai\\s+b\\b/i, tab: 'CSE_AIML_Sec_B', name: 'AI & ML (Sec B)' },\n  { re: /\\baiml\\b|\\bartificial\\s+intelligence\\b|\\bmachine\\s+learning\\b/i, tab: 'CSE_AIML_Sec_A', name: 'AI & ML (Sec A)' },\n  { re: /\\bcys\\s+b\\b|\\bcyber\\s*(sec|security)?\\s+b\\b/i, tab: 'CSE_CyberSec_Sec_B', name: 'Cyber Security (Sec B)' },\n  { re: /\\bcys\\b|\\bcyber\\s*(sec|security)?\\b/i, tab: 'CSE_CyberSec_Sec_A', name: 'Cyber Security (Sec A)' },\n  { re: /\\bibm\\b/i, tab: 'CSE_IBM_Sec_A', name: 'IBM (Sec A)' },\n  { re: /\\bxebia\\b/i, tab: 'CSE_Xebia_Sec_A', name: 'Xebia (Sec A)' },\n];\n\nlet sheetTab = null, detectedSectionName = null;\nfor (const m of sectionMap) {\n  if (m.re.test(query)) { sheetTab = m.tab; detectedSectionName = m.name; break; }\n}\n\nreturn [{ json: {\n  isRegistered: false,\n  action: (rollNumber && sheetTab) ? 'register' : 'prompt',\n  phoneNumber: msgData.phoneNumber,\n  phoneNumberId: msgData.phoneNumberId,\n  contactName: msgData.contactName,\n  query: msgData.query,\n  rollNumber: rollNumber || '',\n  sheetTab: sheetTab || '',\n  detectedSectionName: detectedSectionName || '',\n}}];"
-      },
-      "id": "registration-gate",
-      "name": "Registration Gate",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [1360, 400]
-    },
-    {
-      "parameters": {
         "conditions": {
           "conditions": [
-            {
-              "leftValue": "={{ $json.isRegistered }}",
-              "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equals" }
-            }
-          ]
-        }
-      },
-      "id": "is-registered",
-      "name": "Is Registered?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [1580, 400]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "conditions": [
-            {
-              "leftValue": "={{ $json.isInteractive }}",
-              "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equals" }
-            }
+            { "leftValue": "={{ $json.isInteractive }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
           ]
         }
       },
@@ -146,7 +78,7 @@
       "name": "Is Interactive Reply?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1800, 280]
+      "position": [1140, 400]
     },
     {
       "parameters": {
@@ -156,17 +88,13 @@
       "name": "Parse Selection",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2020, 160]
+      "position": [1360, 280]
     },
     {
       "parameters": {
         "conditions": {
           "conditions": [
-            {
-              "leftValue": "={{ $json.isTimestableRequest }}",
-              "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equals" }
-            }
+            { "leftValue": "={{ $json.isTimestableRequest }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
           ]
         }
       },
@@ -174,72 +102,65 @@
       "name": "Is Timetable Request?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [2240, 160]
+      "position": [1580, 280]
     },
     {
       "parameters": {
-        "jsCode": "const input = $input.first().json;\nconst query = (input.query || '').trim();\nconst queryLower = query.toLowerCase();\n\nconst detectedSection = input.savedSection;\nconst detectedSectionName = input.savedSectionName;\n\nconst dayMap = {\n  'monday': 'Monday', 'mon': 'Monday',\n  'tuesday': 'Tuesday', 'tue': 'Tuesday',\n  'wednesday': 'Wednesday', 'wed': 'Wednesday',\n  'thursday': 'Thursday', 'thu': 'Thursday',\n  'friday': 'Friday', 'fri': 'Friday',\n  'saturday': 'Saturday', 'sat': 'Saturday',\n};\n\nconst now = new Date();\nconst dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];\nlet detectedDay = null;\n\nif (['today','aaj'].some(w => queryLower.includes(w))) {\n  detectedDay = dayNames[now.getDay()];\n} else if (['tomorrow','kal'].some(w => queryLower.includes(w))) {\n  const tmp = new Date(now); tmp.setDate(tmp.getDate()+1);\n  detectedDay = dayNames[tmp.getDay()];\n} else {\n  for (const [k,v] of Object.entries(dayMap)) {\n    if (queryLower.includes(k)) { detectedDay = v; break; }\n  }\n}\n\nconst fullDayRange = detectedSection ? `${detectedSection}!A:H` : null;\n\nreturn [{ json: { ...input, detectedSection, detectedSectionName, detectedDay, hasDay: !!detectedDay, fullDayRange } }];"
+        "jsCode": "const input = $input.first().json;\nconst query = (input.query || '').trim();\nconst queryLower = query.toLowerCase();\n\nconst sectionMap = [\n  { keywords: ['sec-sk', 'sec sk', 'section sk', 'sk'], tab: 'Sec-SK', name: 'Section SK' },\n  { keywords: ['software development b', 'software dev b', 'sd b'], tab: 'CSE_SD_Sec_B', name: 'Software Dev (Sec B)' },\n  { keywords: ['software development', 'software dev', 'sd'], tab: 'CSE_SD_Sec_A', name: 'Software Dev (Sec A)' },\n  { keywords: ['aiml b', 'ai b'], tab: 'CSE_AIML_Sec_B', name: 'AI & ML (Sec B)' },\n  { keywords: ['aiml', 'ai', 'artificial intelligence', 'machine learning', 'ml'], tab: 'CSE_AIML_Sec_A', name: 'AI & ML (Sec A)' },\n  { keywords: ['cyber security b', 'cybersec b', 'cyber b', 'cys b'], tab: 'CSE_CyberSec_Sec_B', name: 'Cyber Security (Sec B)' },\n  { keywords: ['cyber security', 'cybersec', 'cyber', 'cys'], tab: 'CSE_CyberSec_Sec_A', name: 'Cyber Security (Sec A)' },\n  { keywords: ['ibm'], tab: 'CSE_IBM_Sec_A', name: 'IBM (Sec A)' },\n  { keywords: ['xebia'], tab: 'CSE_Xebia_Sec_A', name: 'Xebia (Sec A)' },\n];\n\nlet detectedSection = null;\nlet detectedSectionName = null;\nfor (const m of sectionMap) {\n  if (m.keywords.some(k => queryLower.includes(k))) { detectedSection = m.tab; detectedSectionName = m.name; break; }\n}\n\nconst dayMap = {\n  'monday': 'Monday', 'mon': 'Monday', 'tuesday': 'Tuesday', 'tue': 'Tuesday',\n  'wednesday': 'Wednesday', 'wed': 'Wednesday', 'thursday': 'Thursday', 'thu': 'Thursday',\n  'friday': 'Friday', 'fri': 'Friday', 'saturday': 'Saturday', 'sat': 'Saturday',\n};\n\nconst now = new Date();\nconst dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];\nlet detectedDay = null;\n\nif (['today','aaj'].some(w => queryLower.includes(w))) {\n  detectedDay = dayNames[now.getDay()];\n} else if (['tomorrow','kal'].some(w => queryLower.includes(w))) {\n  const tmp = new Date(now); tmp.setDate(tmp.getDate()+1);\n  detectedDay = dayNames[tmp.getDay()];\n} else {\n  for (const [k,v] of Object.entries(dayMap)) { if (queryLower.includes(k)) { detectedDay = v; break; } }\n}\n\nreturn [{ json: {\n  ...input,\n  detectedSection,\n  detectedSectionName,\n  detectedDay,\n  needsSection: !detectedSection,\n  hasDay: !!detectedDay,\n  fullDayRange: detectedSection ? `${detectedSection}!A:H` : null\n} }];"
       },
-      "id": "registered-preprocessor",
-      "name": "Registered Preprocessor",
+      "id": "query-preprocessor",
+      "name": "Query Preprocessor",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2020, 400]
+      "position": [1360, 520]
     },
     {
       "parameters": {
         "conditions": {
           "conditions": [
-            {
-              "leftValue": "={{ $json.hasDay }}",
-              "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equals" }
-            }
+            { "leftValue": "={{ $json.needsSection }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
           ]
         }
       },
-      "id": "has-day",
-      "name": "Has Day?",
+      "id": "section-check",
+      "name": "Has Section?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [2240, 400]
+      "position": [1580, 520]
+    },
+    {
+      "parameters": {
+        "jsCode": "const msgData = $('Extract Message').first().json;\nreturn [{ json: {\n  phoneNumber: msgData.phoneNumber,\n  phoneNumberId: msgData.phoneNumberId,\n  response: '📚 *JECRC Timetable Bot*\\n\\nI need to know your section to show the timetable.\\n\\n*Available sections:*\\n• SD — Software Development\\n• AIML — AI & Machine Learning\\n• CYS — Cyber Security\\n• IBM — IBM Specialization\\n• Xebia — Xebia Specialization\\n• SK — Section SK\\n\\n*Example:*\\n\"Monday schedule for SD\"\\n\"Thursday AIML\"\\n\"Today timetable for CYS\"'\n} }];"
+      },
+      "id": "ask-section",
+      "name": "Ask Section",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1800, 440]
     },
     {
       "parameters": {
         "authentication": "serviceAccount",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1IvCqMa-qFW4dxjMVZAeZwgLb7kKaoA9hUjsNK0M_890/edit",
-          "mode": "url"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "={{ $json.detectedSection }}",
-          "mode": "name"
-        },
+        "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1IvCqMa-qFW4dxjMVZAeZwgLb7kKaoA9hUjsNK0M_890/edit", "mode": "url" },
+        "sheetName": { "__rl": true, "value": "={{ $json.detectedSection }}", "mode": "name" },
         "options": {}
       },
       "id": "wa-sheets-read",
       "name": "Google Sheets - Read Timetable",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [2460, 280],
-      "credentials": {
-        "googleApi": {
-          "id": "hUoDZ9uB4WIQIviJ",
-          "name": "Google Sheets account"
-        }
-      }
+      "position": [1800, 640],
+      "credentials": { "googleApi": { "id": "hUoDZ9uB4WIQIviJ", "name": "Google Sheets account" } }
     },
     {
       "parameters": {
-        "jsCode": "const rows = $input.all().map(i => i.json);\n\nlet preprocessed = {};\ntry { preprocessed = $('Registered Preprocessor').first().json; } catch(_) {\n  try { preprocessed = $('Parse Selection').first().json; } catch(__) {}\n}\n\nconst requestedDay = preprocessed.detectedDay;\n\nconst slots = [\n  { col: 'Lecture 1 (8.00-8.50)',   time: '8:00-8:50 AM'   },\n  { col: 'Lecture 2 (8.50-9.40)',   time: '8:50-9:40 AM'   },\n  { col: 'Lecture 3 (9.40-10.30)',  time: '9:40-10:30 AM'  },\n  { col: 'Lecture 4 (10.30-11.20)', time: '10:30-11:20 AM' },\n  { col: 'Lecture 5 (11.20-12.05)', time: '11:20-12:05 PM' },\n  { col: 'Lecture 6 (12.05-12.50)', time: '12:05-12:50 PM' },\n];\n\nfunction formatDay(row) {\n  const day = row['Day/Time'] || '';\n  const lines = ['📅 *' + day + '*'];\n  let lastVal = '';\n  for (const slot of slots) {\n    let val = (row[slot.col] || '').trim();\n    if (!val && lastVal) { val = lastVal + ' (cont.)'; }\n    else { lastVal = val || ''; }\n    if (val && val !== 'N/A') {\n      lines.push('⏰ ' + slot.time + '\\n   📚 ' + val);\n    } else {\n      lastVal = '';\n      lines.push('⏰ ' + slot.time + '\\n   Free Period');\n    }\n  }\n  return lines.join('\\n');\n}\n\nlet formatted = [];\nif (requestedDay) {\n  const dayRow = rows.find(r => r['Day/Time']?.toLowerCase() === requestedDay.toLowerCase());\n  formatted.push(dayRow ? formatDay(dayRow) : 'No schedule found for ' + requestedDay + '.');\n} else {\n  for (const row of rows) {\n    if (row['Day/Time'] && row['Day/Time'] !== 'Day/Time') formatted.push(formatDay(row));\n  }\n}\n\nconst label = preprocessed.detectedDay\n  ? '📊 ' + preprocessed.detectedDay + ' — ' + (preprocessed.detectedSectionName || preprocessed.detectedSection || '')\n  : '📊 Full Week — ' + (preprocessed.detectedSectionName || preprocessed.detectedSection || '');\n\nreturn [{ json: { ...preprocessed, response: label + '\\n\\n' + formatted.join('\\n\\n') } }];"
+        "jsCode": "const rows = $input.all().map(i => i.json);\nlet preprocessed = {};\ntry { preprocessed = $('Query Preprocessor').first().json; } catch(_){}\ntry { preprocessed = $('Parse Selection').first().json; } catch(__){}\n\nconst requestedDay = preprocessed.detectedDay;\n\nconst slots = [\n  { col: 'Lecture 1 (8.00-8.50)', time: '8:00-8:50 AM' },\n  { col: 'Lecture 2 (8.50-9.40)', time: '8:50-9:40 AM' },\n  { col: 'Lecture 3 (9.40-10.30)', time: '9:40-10:30 AM' },\n  { col: 'Lecture 4 (10.30-11.20)', time: '10:30-11:20 AM' },\n  { col: 'Lecture 5 (11.20-12.05)', time: '11:20-12:05 PM' },\n  { col: 'Lecture 6 (12.05-12.50)', time: '12:05-12:50 PM' },\n];\n\nfunction formatDay(row) {\n  const day = row['Day/Time'] || '';\n  const lines = ['📅 *' + day + '*'];\n  let lastVal = '';\n  for (const slot of slots) {\n    let val = (row[slot.col] || '').trim();\n    if (!val && lastVal) { val = lastVal + ' (cont.)'; }\n    else { lastVal = val || ''; }\n    if (val && val !== 'N/A') { lines.push('⏰ ' + slot.time + '\\n   📚 ' + val); }\n    else { lastVal = ''; lines.push('⏰ ' + slot.time + '\\n   Free Period'); }\n  }\n  return lines.join('\\n');\n}\n\nlet formatted = [];\nif (requestedDay) {\n  const dayRow = rows.find(r => r['Day/Time']?.toLowerCase() === requestedDay.toLowerCase());\n  formatted.push(dayRow ? formatDay(dayRow) : 'No schedule found for ' + requestedDay + '.');\n} else {\n  for (const row of rows) { if (row['Day/Time'] && row['Day/Time'] !== 'Day/Time') formatted.push(formatDay(row)); }\n}\n\nconst label = preprocessed.detectedDay ? '📊 ' + preprocessed.detectedDay + ' — ' + (preprocessed.detectedSectionName || preprocessed.detectedSection || '') : '📊 Full Week — ' + (preprocessed.detectedSectionName || preprocessed.detectedSection || '');\n\nreturn [{ json: { ...preprocessed, response: label + '\\n\\n' + formatted.join('\\n\\n') } }];"
       },
       "id": "wa-formatter",
       "name": "Format Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2680, 280]
+      "position": [2020, 640]
     },
     {
       "parameters": {
@@ -261,7 +182,7 @@
       "name": "Send WhatsApp Reply",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2900, 400]
+      "position": [2240, 520]
     },
     {
       "parameters": {
@@ -276,178 +197,55 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { messaging_product: 'whatsapp', to: $json.phoneNumber, type: 'interactive', interactive: { type: 'list', header: { type: 'text', text: '📅 ' + ($json.detectedSectionName || $json.savedSectionName || 'JECRC Timetable') }, body: { text: 'Select a day to view your timetable:' }, footer: { text: 'JECRC University' }, action: { button: 'Choose Day', sections: [{ title: 'Days of the Week', rows: [{ id: ($json.detectedSection || $json.savedSection) + '|Monday', title: 'Monday' }, { id: ($json.detectedSection || $json.savedSection) + '|Tuesday', title: 'Tuesday' }, { id: ($json.detectedSection || $json.savedSection) + '|Wednesday', title: 'Wednesday' }, { id: ($json.detectedSection || $json.savedSection) + '|Thursday', title: 'Thursday' }, { id: ($json.detectedSection || $json.savedSection) + '|Friday', title: 'Friday' }, { id: ($json.detectedSection || $json.savedSection) + '|Saturday', title: 'Saturday' }] }] } } } }}",
+        "jsonBody": "={{ { messaging_product: 'whatsapp', to: $json.phoneNumber, type: 'interactive', interactive: { type: 'list', header: { type: 'text', text: '📅 JECRC Timetable Bot' }, body: { text: 'Pick your section to see the timetable:' }, footer: { text: 'JECRC University, Jaipur' }, action: { button: 'Choose Section', sections: [{ title: 'Available Sections', rows: [{ id: 'SECTION|CSE_SD_Sec_A', title: 'SD', description: 'Software Development' }, { id: 'SECTION|CSE_AIML_Sec_A', title: 'AIML', description: 'AI & Machine Learning' }, { id: 'SECTION|CSE_CyberSec_Sec_A', title: 'CYS', description: 'Cyber Security' }, { id: 'SECTION|CSE_IBM_Sec_A', title: 'IBM', description: 'IBM Specialization' }, { id: 'SECTION|CSE_Xebia_Sec_A', title: 'Xebia', description: 'Xebia Specialization' }, { id: 'SECTION|Sec-SK', title: 'SK', description: 'Section SK' }] }] } } } }}",
+        "options": {}
+      },
+      "id": "send-section-menu",
+      "name": "Send Section Menu",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1800, 260]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v18.0/{{ $json.phoneNumberId }}/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer EAAj1IabOkvYBRU3JKHtZCMLi6JjQi10JZBdyGVt9gTFZA5ldA9ZCsCq2jmgFLZCPtX1xrdQyc4xRJQ1LliZCRpZCtEhXtxZBPtlzI4JEpT6hEJT77hYp5ZCKloeezfIOFv2xWkC954hFcAQZBZAFJL76WgbibLjKBIlaM4ex6agZBHudZAszcKGlFvZBLcyxunDHSNKVpPtNb300FqKWv8UQxYBfrCTTNVcdkSULC31ZCddYEb0pBdVQ1PPsr7ZAh3IP0sXUcMj4Gks2v3A4VZASdupoxRkrevpb" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { messaging_product: 'whatsapp', to: $json.phoneNumber, type: 'interactive', interactive: { type: 'list', header: { type: 'text', text: '📅 ' + ($json.detectedSectionName || $json.detectedSection) }, body: { text: 'Select a day to view the timetable:' }, footer: { text: 'JECRC University' }, action: { button: 'Choose Day', sections: [{ title: 'Days of the Week', rows: [{ id: $json.detectedSection + '|Monday', title: 'Monday' }, { id: $json.detectedSection + '|Tuesday', title: 'Tuesday' }, { id: $json.detectedSection + '|Wednesday', title: 'Wednesday' }, { id: $json.detectedSection + '|Thursday', title: 'Thursday' }, { id: $json.detectedSection + '|Friday', title: 'Friday' }, { id: $json.detectedSection + '|Saturday', title: 'Saturday' }] }] } } } }}",
         "options": {}
       },
       "id": "send-day-menu",
       "name": "Send Day Menu",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [2460, 60]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "conditions": [
-            {
-              "leftValue": "={{ $json.action }}",
-              "rightValue": "register",
-              "operator": { "type": "string", "operation": "equals" }
-            }
-          ]
-        }
-      },
-      "id": "should-register",
-      "name": "Should Register?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [1800, 540]
-    },
-    {
-      "parameters": {
-        "operation": "appendOrUpdate",
-        "authentication": "serviceAccount",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1IvCqMa-qFW4dxjMVZAeZwgLb7kKaoA9hUjsNK0M_890/edit",
-          "mode": "url"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "Registered_Students",
-          "mode": "name"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "WhatsApp_Number": "={{ $json.phoneNumber }}",
-            "Roll_Number": "={{ $json.rollNumber }}",
-            "Section_Name": "={{ $json.detectedSectionName }}",
-            "Sheet_Tab": "={{ $json.sheetTab }}",
-            "Registered_At": "={{ new Date().toISOString() }}"
-          },
-          "matchingColumns": ["WhatsApp_Number"],
-          "schema": []
-        },
-        "options": {}
-      },
-      "id": "register-student",
-      "name": "Register Student",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [2020, 540],
-      "credentials": {
-        "googleApi": {
-          "id": "hUoDZ9uB4WIQIviJ",
-          "name": "Google Sheets account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "const regData = $('Registration Gate').first().json;\nconst msgData = $('Extract Message').first().json;\nreturn [{ json: {\n  phoneNumber: msgData.phoneNumber,\n  phoneNumberId: msgData.phoneNumberId,\n  response: `✅ *Welcome, ${msgData.contactName}!*\\n\\nYou're registered as:\\n📋 Roll No: *${regData.rollNumber}*\\n📚 Section: *${regData.detectedSectionName}*\\n\\nYou can now check your timetable!\\nJust type a day like:\\n• \"Monday\"\\n• \"Thursday schedule\"\\n• \"Today\"\\n\\nI'll show your ${regData.detectedSectionName} timetable instantly. 📅`\n}}];"
-      },
-      "id": "registration-welcome",
-      "name": "Registration Welcome",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [2240, 540]
-    },
-    {
-      "parameters": {
-        "jsCode": "const msgData = $('Extract Message').first().json;\nreturn [{ json: {\n  phoneNumber: msgData.phoneNumber,\n  phoneNumberId: msgData.phoneNumberId,\n  response: `👋 *Welcome to JECRC Timetable Bot!*\\n\\nTo get started, send your *roll number + section* in one message.\\n\\n*Example:*\\n23BCON1613 SD\\n\\n*Available sections:*\\n• SD — Software Development\\n• AIML — AI & Machine Learning\\n• CYS — Cyber Security\\n• IBM — IBM Specialization\\n• Xebia — Xebia Specialization\\n• SK — Section SK\\n\\n_Format: ROLLNUMBER SECTION_`\n}}];"
-      },
-      "id": "ask-to-register",
-      "name": "Ask To Register",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [2020, 680]
+      "position": [2020, 440]
     }
   ],
   "connections": {
-    "WhatsApp Messages Webhook": {
-      "main": [[{ "node": "Extract Message", "type": "main", "index": 0 }]]
-    },
-    "Extract Message": {
-      "main": [[{ "node": "Acknowledge", "type": "main", "index": 0 }]]
-    },
-    "Acknowledge": {
-      "main": [[{ "node": "Should Skip?", "type": "main", "index": 0 }]]
-    },
-    "Should Skip?": {
-      "main": [
-        [],
-        [{ "node": "Unsupported Type?", "type": "main", "index": 0 }]
-      ]
-    },
-    "Unsupported Type?": {
-      "main": [
-        [{ "node": "Send WhatsApp Reply", "type": "main", "index": 0 }],
-        [{ "node": "Check Registration", "type": "main", "index": 0 }]
-      ]
-    },
-    "Check Registration": {
-      "main": [[{ "node": "Registration Gate", "type": "main", "index": 0 }]]
-    },
-    "Registration Gate": {
-      "main": [[{ "node": "Is Registered?", "type": "main", "index": 0 }]]
-    },
-    "Is Registered?": {
-      "main": [
-        [{ "node": "Is Interactive Reply?", "type": "main", "index": 0 }],
-        [{ "node": "Should Register?", "type": "main", "index": 0 }]
-      ]
-    },
-    "Is Interactive Reply?": {
-      "main": [
-        [{ "node": "Parse Selection", "type": "main", "index": 0 }],
-        [{ "node": "Registered Preprocessor", "type": "main", "index": 0 }]
-      ]
-    },
-    "Parse Selection": {
-      "main": [[{ "node": "Is Timetable Request?", "type": "main", "index": 0 }]]
-    },
-    "Is Timetable Request?": {
-      "main": [
-        [{ "node": "Google Sheets - Read Timetable", "type": "main", "index": 0 }],
-        [{ "node": "Send Day Menu", "type": "main", "index": 0 }]
-      ]
-    },
-    "Registered Preprocessor": {
-      "main": [[{ "node": "Has Day?", "type": "main", "index": 0 }]]
-    },
-    "Has Day?": {
-      "main": [
-        [{ "node": "Google Sheets - Read Timetable", "type": "main", "index": 0 }],
-        [{ "node": "Send Day Menu", "type": "main", "index": 0 }]
-      ]
-    },
-    "Google Sheets - Read Timetable": {
-      "main": [[{ "node": "Format Response", "type": "main", "index": 0 }]]
-    },
-    "Format Response": {
-      "main": [[{ "node": "Send WhatsApp Reply", "type": "main", "index": 0 }]]
-    },
-    "Should Register?": {
-      "main": [
-        [{ "node": "Register Student", "type": "main", "index": 0 }],
-        [{ "node": "Ask To Register", "type": "main", "index": 0 }]
-      ]
-    },
-    "Register Student": {
-      "main": [[{ "node": "Registration Welcome", "type": "main", "index": 0 }]]
-    },
-    "Registration Welcome": {
-      "main": [[{ "node": "Send WhatsApp Reply", "type": "main", "index": 0 }]]
-    },
-    "Ask To Register": {
-      "main": [[{ "node": "Send WhatsApp Reply", "type": "main", "index": 0 }]]
-    }
+    "WhatsApp Messages Webhook": { "main": [[{ "node": "Extract Message", "type": "main", "index": 0 }]] },
+    "Extract Message": { "main": [[{ "node": "Acknowledge", "type": "main", "index": 0 }]] },
+    "Acknowledge": { "main": [[{ "node": "Should Skip?", "type": "main", "index": 0 }]] },
+    "Should Skip?": { "main": [[], [{ "node": "Unsupported Type?", "type": "main", "index": 0 }]] },
+    "Unsupported Type?": { "main": [[{ "node": "Send WhatsApp Reply", "type": "main", "index": 0 }], [{ "node": "Is Interactive Reply?", "type": "main", "index": 0 }]] },
+    "Is Interactive Reply?": { "main": [[{ "node": "Parse Selection", "type": "main", "index": 0 }], [{ "node": "Query Preprocessor", "type": "main", "index": 0 }]] },
+    "Parse Selection": { "main": [[{ "node": "Is Timetable Request?", "type": "main", "index": 0 }]] },
+    "Is Timetable Request?": { "main": [[{ "node": "Google Sheets - Read Timetable", "type": "main", "index": 0 }], [{ "node": "Send Day Menu", "type": "main", "index": 0 }]] },
+    "Query Preprocessor": { "main": [[{ "node": "Has Section?", "type": "main", "index": 0 }]] },
+    "Has Section?": { "main": [[{ "node": "Send Section Menu", "type": "main", "index": 0 }], [{ "node": "Google Sheets - Read Timetable", "type": "main", "index": 0 }]] },
+    "Google Sheets - Read Timetable": { "main": [[{ "node": "Format Response", "type": "main", "index": 0 }]] },
+    "Format Response": { "main": [[{ "node": "Send WhatsApp Reply", "type": "main", "index": 0 }]] },
+    "Ask Section": { "main": [[{ "node": "Send WhatsApp Reply", "type": "main", "index": 0 }]] },
+    "Send Day Menu": { "main": [[{ "node": "Send WhatsApp Reply", "type": "main", "index": 0 }]] },
+    "Send Section Menu": { "main": [[{ "node": "Send WhatsApp Reply", "type": "main", "index": 0 }]] }
   },
-  "settings": {
-    "executionOrder": "v1"
-  },
-  "meta": {
-    "instanceId": "jecrc-timetable-chatbot"
-  }
+  "settings": { "executionOrder": "v1" },
+  "meta": { "instanceId": "jecrc-timetable-chatbot" }
 }
