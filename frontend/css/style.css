@@ -208,6 +208,44 @@ body {
     30% { transform: translateY(-4px); }
 }
 
+/* Markdown table rendered inside bot messages */
+.chat-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 12px;
+    margin: 6px 0;
+    overflow: hidden;
+    border-radius: 6px;
+}
+
+.chat-table th,
+.chat-table td {
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.chat-table th {
+    background: #f1f5f9;
+    font-weight: 600;
+    color: #475569;
+}
+
+.chat-table tr:nth-child(even) td {
+    background: #f8fafc;
+}
+
+/* Headings inside bot messages */
+.bot-message h3,
+.bot-message h4,
+.bot-message h5 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin: 8px 0 4px;
+}
+
 /* Scrollbar */
 .chat-messages::-webkit-scrollbar {
     width: 6px;

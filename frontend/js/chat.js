@@ -71,11 +71,93 @@ function appendMessage(text, sender) {
 }
 
 function formatResponse(text) {
-    // Convert newlines to <br> and handle basic formatting
+    const lines = text.split('\n');
+    const out = [];
+    let i = 0;
+
+    while (i < lines.length) {
+        const line = lines[i];
+
+        // Markdown table block (lines starting with |)
+        if (line.trim().startsWith('|')) {
+            const block = [];
+            while (i < lines.length && lines[i].trim().startsWith('|')) {
+                block.push(lines[i]);
+                i++;
+            }
+            out.push(renderTable(block));
+            continue;
+        }
+
+        // Bullet list (- or *)
+        if (/^[ \t]*[-*] /.test(line)) {
+            const items = [];
+            while (i < lines.length && /^[ \t]*[-*] /.test(lines[i])) {
+                items.push('<li>' + inlineFmt(lines[i].replace(/^[ \t]*[-*] /, '')) + '</li>');
+                i++;
+            }
+            out.push('<ul>' + items.join('') + '</ul>');
+            continue;
+        }
+
+        // Numbered list
+        if (/^\d+\. /.test(line)) {
+            const items = [];
+            while (i < lines.length && /^\d+\. /.test(lines[i])) {
+                items.push('<li>' + inlineFmt(lines[i].replace(/^\d+\. /, '')) + '</li>');
+                i++;
+            }
+            out.push('<ol>' + items.join('') + '</ol>');
+            continue;
+        }
+
+        // Headings (# ## ###)
+        const hMatch = line.match(/^(#{1,3}) (.+)/);
+        if (hMatch) {
+            const lvl = Math.min(hMatch[1].length + 2, 5);
+            out.push(`<h${lvl}>${inlineFmt(hMatch[2])}</h${lvl}>`);
+            i++;
+            continue;
+        }
+
+        // Empty line → spacing
+        if (line.trim() === '') {
+            out.push('<br>');
+            i++;
+            continue;
+        }
+
+        // Plain line
+        out.push(inlineFmt(line) + '<br>');
+        i++;
+    }
+
+    return out.join('');
+}
+
+function renderTable(lines) {
+    let html = '<table class="chat-table">';
+    let pastSep = false;
+
+    for (const line of lines) {
+        // Separator row: |---|:---|---:|
+        if (/^\|[\s\-:|]+\|$/.test(line.trim())) {
+            pastSep = true;
+            continue;
+        }
+        const cells = line.trim().replace(/^\||\|$/g, '').split('|');
+        const tag = pastSep ? 'td' : 'th';
+        html += '<tr>' + cells.map(c => `<${tag}>${inlineFmt(c.trim())}</${tag}>`).join('') + '</tr>';
+    }
+
+    return html + '</table>';
+}
+
+function inlineFmt(text) {
     return text
-        .replace(/\n/g, '<br>')
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\|(.*?)\|/g, '<code>$1</code>');
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>');
 }
 
 function showTypingIndicator() {
