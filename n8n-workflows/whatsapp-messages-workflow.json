@@ -169,7 +169,7 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "=Bearer EAAj1IabOkvYBRU3JKHtZCMLi6JjQi10JZBdyGVt9gTFZA5ldA9ZCsCq2jmgFLZCPtX1xrdQyc4xRJQ1LliZCRpZCtEhXtxZBPtlzI4JEpT6hEJT77hYp5ZCKloeezfIOFv2xWkC954hFcAQZBZAFJL76WgbibLjKBIlaM4ex6agZBHudZAszcKGlFvZBLcyxunDHSNKVpPtNb300FqKWv8UQxYBfrCTTNVcdkSULC31ZCddYEb0pBdVQ1PPsr7ZAh3IP0sXUcMj4Gks2v3A4VZASdupoxRkrevpb" },
+            { "name": "Authorization", "value": "={{ $env.WHATSAPP_API_TOKEN }}" },
             { "name": "Content-Type", "value": "application/json" }
           ]
         },
@@ -191,7 +191,7 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "=Bearer EAAj1IabOkvYBRU3JKHtZCMLi6JjQi10JZBdyGVt9gTFZA5ldA9ZCsCq2jmgFLZCPtX1xrdQyc4xRJQ1LliZCRpZCtEhXtxZBPtlzI4JEpT6hEJT77hYp5ZCKloeezfIOFv2xWkC954hFcAQZBZAFJL76WgbibLjKBIlaM4ex6agZBHudZAszcKGlFvZBLcyxunDHSNKVpPtNb300FqKWv8UQxYBfrCTTNVcdkSULC31ZCddYEb0pBdVQ1PPsr7ZAh3IP0sXUcMj4Gks2v3A4VZASdupoxRkrevpb" },
+            { "name": "Authorization", "value": "={{ $env.WHATSAPP_API_TOKEN }}" },
             { "name": "Content-Type", "value": "application/json" }
           ]
         },
@@ -213,7 +213,7 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "=Bearer EAAj1IabOkvYBRU3JKHtZCMLi6JjQi10JZBdyGVt9gTFZA5ldA9ZCsCq2jmgFLZCPtX1xrdQyc4xRJQ1LliZCRpZCtEhXtxZBPtlzI4JEpT6hEJT77hYp5ZCKloeezfIOFv2xWkC954hFcAQZBZAFJL76WgbibLjKBIlaM4ex6agZBHudZAszcKGlFvZBLcyxunDHSNKVpPtNb300FqKWv8UQxYBfrCTTNVcdkSULC31ZCddYEb0pBdVQ1PPsr7ZAh3IP0sXUcMj4Gks2v3A4VZASdupoxRkrevpb" },
+            { "name": "Authorization", "value": "={{ $env.WHATSAPP_API_TOKEN }}" },
             { "name": "Content-Type", "value": "application/json" }
           ]
         },
