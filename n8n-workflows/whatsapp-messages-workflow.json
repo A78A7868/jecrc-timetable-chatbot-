@@ -13,20 +13,28 @@
       "name": "WhatsApp Messages Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [240, 300],
+      "position": [
+        240,
+        300
+      ],
       "webhookId": "b2c3d4e5-f6a7-8901-bcde-f12345678901"
     },
     {
       "parameters": {
         "respondWith": "text",
         "responseBody": "OK",
-        "options": { "responseCode": 200 }
+        "options": {
+          "responseCode": 200
+        }
       },
       "id": "ack-response",
       "name": "Acknowledge",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [460, 300]
+      "position": [
+        460,
+        300
+      ]
     },
     {
       "parameters": {
@@ -36,13 +44,23 @@
       "name": "Extract Message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [680, 300]
+      "position": [
+        680,
+        300
+      ]
     },
     {
       "parameters": {
         "conditions": {
           "conditions": [
-            { "leftValue": "={{ $json.skip }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+            {
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
           ]
         }
       },
@@ -50,13 +68,23 @@
       "name": "Should Skip?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [900, 300]
+      "position": [
+        900,
+        300
+      ]
     },
     {
       "parameters": {
         "conditions": {
           "conditions": [
-            { "leftValue": "={{ $json.isUnsupported }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+            {
+              "leftValue": "={{ $json.isUnsupported }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
           ]
         }
       },
@@ -64,13 +92,23 @@
       "name": "Unsupported Type?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1120, 300]
+      "position": [
+        1120,
+        300
+      ]
     },
     {
       "parameters": {
         "conditions": {
           "conditions": [
-            { "leftValue": "={{ $json.isInteractive }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+            {
+              "leftValue": "={{ $json.isInteractive }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
           ]
         }
       },
@@ -78,7 +116,10 @@
       "name": "Is Interactive Reply?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1340, 300]
+      "position": [
+        1340,
+        300
+      ]
     },
     {
       "parameters": {
@@ -88,13 +129,23 @@
       "name": "Parse Selection",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1560, 160]
+      "position": [
+        1560,
+        160
+      ]
     },
     {
       "parameters": {
         "conditions": {
           "conditions": [
-            { "leftValue": "={{ $json.isTimestableRequest }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+            {
+              "leftValue": "={{ $json.isTimestableRequest }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
           ]
         }
       },
@@ -102,7 +153,10 @@
       "name": "Is Timetable Request?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1780, 160]
+      "position": [
+        1780,
+        160
+      ]
     },
     {
       "parameters": {
@@ -112,13 +166,23 @@
       "name": "Query Preprocessor",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1560, 440]
+      "position": [
+        1560,
+        440
+      ]
     },
     {
       "parameters": {
         "conditions": {
           "conditions": [
-            { "leftValue": "={{ $json.isHoliday }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+            {
+              "leftValue": "={{ $json.isHoliday }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
           ]
         }
       },
@@ -126,7 +190,10 @@
       "name": "Is Holiday?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1780, 440]
+      "position": [
+        1780,
+        440
+      ]
     },
     {
       "parameters": {
@@ -136,13 +203,23 @@
       "name": "Holiday Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2000, 340]
+      "position": [
+        2000,
+        340
+      ]
     },
     {
       "parameters": {
         "conditions": {
           "conditions": [
-            { "leftValue": "={{ $json.needsSection }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+            {
+              "leftValue": "={{ $json.needsSection }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
           ]
         }
       },
@@ -150,13 +227,23 @@
       "name": "Has Section?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [2000, 540]
+      "position": [
+        2000,
+        540
+      ]
     },
     {
       "parameters": {
         "conditions": {
           "conditions": [
-            { "leftValue": "={{ $json.hasDay }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+            {
+              "leftValue": "={{ $json.hasDay }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
           ]
         }
       },
@@ -164,24 +251,12 @@
       "name": "Has Day?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [2220, 540]
+      "position": [
+        2220,
+        540
+      ]
     },
     {
-      "parameters": {
-        "authentication": "serviceAccount",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1IvCqMa-qFW4dxjMVZAeZwgLb7kKaoA9hUjsNK0M_890/edit",
-          "mode": "url"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "={{ $json.detectedSection }}",
-          "mode": "name"
-        },
-        "options": {}
-      },
-      {
       "parameters": {
         "assignments": {
           "assignments": [
@@ -199,7 +274,10 @@
       "name": "Set API Keys",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [2440, 200]
+      "position": [
+        2440,
+        200
+      ]
     },
     {
       "parameters": {
@@ -220,7 +298,10 @@
       "name": "Google Sheets - Read Timetable",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [2440, 380],
+      "position": [
+        2440,
+        380
+      ],
       "credentials": {
         "googleApi": {
           "id": "hUoDZ9uB4WIQIviJ",
@@ -236,7 +317,10 @@
       "name": "Prepare Gemini Request",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2660, 380]
+      "position": [
+        2660,
+        380
+      ]
     },
     {
       "parameters": {
@@ -244,7 +328,12 @@
         "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "key", "value": "={{ $json.geminiKey }}" }]
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $env.GEMINI_API_KEY }}"
+            }
+          ]
         },
         "sendBody": true,
         "contentType": "raw",
@@ -256,7 +345,10 @@
       "name": "Call Gemini API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2880, 380]
+      "position": [
+        2880,
+        380
+      ]
     },
     {
       "parameters": {
@@ -266,7 +358,10 @@
       "name": "Response Formatter",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [3100, 380]
+      "position": [
+        3100,
+        380
+      ]
     },
     {
       "parameters": {
@@ -275,8 +370,14 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "={{ 'Bearer ' + $env.WHATSAPP_API_TOKEN }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.WHATSAPP_API_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -288,7 +389,10 @@
       "name": "Send WhatsApp Reply",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [3320, 380]
+      "position": [
+        3320,
+        380
+      ]
     },
     {
       "parameters": {
@@ -297,8 +401,14 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "={{ 'Bearer ' + $env.WHATSAPP_API_TOKEN }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.WHATSAPP_API_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -310,7 +420,10 @@
       "name": "Send Section Menu",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [2220, 700]
+      "position": [
+        2220,
+        700
+      ]
     },
     {
       "parameters": {
@@ -319,8 +432,14 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "={{ 'Bearer ' + $env.WHATSAPP_API_TOKEN }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.WHATSAPP_API_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -332,86 +451,259 @@
       "name": "Send Day Menu",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [2000, 200]
+      "position": [
+        2000,
+        200
+      ]
     }
   ],
   "connections": {
     "WhatsApp Messages Webhook": {
-      "main": [[{ "node": "Extract Message", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Extract Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Extract Message": {
-      "main": [[{ "node": "Acknowledge", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Acknowledge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Acknowledge": {
-      "main": [[{ "node": "Should Skip?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Should Skip?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Should Skip?": {
       "main": [
         [],
-        [{ "node": "Unsupported Type?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Unsupported Type?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Unsupported Type?": {
       "main": [
-        [{ "node": "Send WhatsApp Reply", "type": "main", "index": 0 }],
-        [{ "node": "Is Interactive Reply?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Interactive Reply?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Is Interactive Reply?": {
       "main": [
-        [{ "node": "Parse Selection", "type": "main", "index": 0 }],
-        [{ "node": "Query Preprocessor", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Parse Selection",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Query Preprocessor",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Parse Selection": {
-      "main": [[{ "node": "Is Timetable Request?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Is Timetable Request?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Is Timetable Request?": {
       "main": [
-        [{ "node": "Set API Keys", "type": "main", "index": 0 }],
-        [{ "node": "Send Day Menu", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Set API Keys",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Day Menu",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Query Preprocessor": {
-      "main": [[{ "node": "Is Holiday?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Is Holiday?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Is Holiday?": {
       "main": [
-        [{ "node": "Holiday Response", "type": "main", "index": 0 }],
-        [{ "node": "Has Section?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Holiday Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Has Section?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Holiday Response": {
-      "main": [[{ "node": "Send WhatsApp Reply", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Has Section?": {
       "main": [
-        [{ "node": "Send Section Menu", "type": "main", "index": 0 }],
-        [{ "node": "Has Day?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Send Section Menu",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Has Day?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Has Day?": {
       "main": [
-        [{ "node": "Set API Keys", "type": "main", "index": 0 }],
-        [{ "node": "Send Day Menu", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Set API Keys",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Day Menu",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Google Sheets - Read Timetable": {
-      "main": [[{ "node": "Set API Keys", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Prepare Gemini Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Set API Keys": {
-      "main": [[{ "node": "Google Sheets - Read Timetable", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Read Timetable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Prepare Gemini Request": {
-      "main": [[{ "node": "Call Gemini API", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Call Gemini API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Call Gemini API": {
-      "main": [[{ "node": "Response Formatter", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Response Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Response Formatter": {
-      "main": [[{ "node": "Send WhatsApp Reply", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "settings": { "executionOrder": "v1" },
-  "meta": { "instanceId": "jecrc-timetable-chatbot" }
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "instanceId": "jecrc-timetable-chatbot"
+  }
 }
