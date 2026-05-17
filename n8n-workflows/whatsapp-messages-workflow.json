@@ -13,20 +13,28 @@
       "name": "WhatsApp Messages Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [250, 300],
+      "position": [
+        250,
+        300
+      ],
       "webhookId": "b2c3d4e5-f6a7-8901-bcde-f12345678901"
     },
     {
       "parameters": {
         "respondWith": "text",
         "responseBody": "OK",
-        "options": { "responseCode": 200 }
+        "options": {
+          "responseCode": 200
+        }
       },
       "id": "ack-response",
       "name": "Acknowledge",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [480, 200]
+      "position": [
+        480,
+        200
+      ]
     },
     {
       "parameters": {
@@ -36,7 +44,10 @@
       "name": "Extract Message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [480, 400]
+      "position": [
+        480,
+        400
+      ]
     },
     {
       "parameters": {
@@ -45,7 +56,10 @@
             {
               "leftValue": "={{ $json.skip }}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equals" }
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
             }
           ]
         }
@@ -54,7 +68,10 @@
       "name": "Should Skip?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [700, 400]
+      "position": [
+        700,
+        400
+      ]
     },
     {
       "parameters": {
@@ -63,7 +80,10 @@
             {
               "leftValue": "={{ $json.isUnsupported }}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equals" }
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
             }
           ]
         }
@@ -72,17 +92,23 @@
       "name": "Unsupported Type?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [920, 400]
+      "position": [
+        920,
+        400
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const input = $input.first().json;\nconst query = (input.query || '').trim();\nconst queryLower = query.toLowerCase();\n\nconst validSections = [\n  'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','R','S',\n  'SA','SB','SC','SD','SE','SF','SG','SH','SI','SJ','SK','SL','SM'\n];\n\nlet detectedSection = null;\nlet detectedSectionName = null;\n\nconst secMatch = queryLower.match(/(?:sec(?:tion)?[\\s-]*)([a-z]{1,2})\\b/);\nif (secMatch) {\n  const letter = secMatch[1].toUpperCase();\n  if (validSections.includes(letter)) {\n    detectedSection = `Sec-${letter}`;\n    detectedSectionName = `Section ${letter}`;\n  }\n}\n\nconst dayMap = {\n  'mon': 'Monday', 'monday': 'Monday',\n  'tue': 'Tuesday', 'tuesday': 'Tuesday',\n  'wed': 'Wednesday', 'wednesday': 'Wednesday',\n  'thu': 'Thursday', 'thursday': 'Thursday',\n  'fri': 'Friday', 'friday': 'Friday',\n  'sat': 'Saturday', 'saturday': 'Saturday'\n};\n\nlet detectedDay = null;\nconst now = new Date();\nconst todayWords = ['today', 'aaj'];\nconst tomorrowWords = ['tomorrow', 'kal'];\n\nif (todayWords.some(w => queryLower.includes(w))) {\n  detectedDay = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getDay()];\n} else if (tomorrowWords.some(w => queryLower.includes(w))) {\n  const t = new Date(now); t.setDate(t.getDate() + 1);\n  detectedDay = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][t.getDay()];\n} else {\n  for (const [k, v] of Object.entries(dayMap)) {\n    if (queryLower.includes(k)) { detectedDay = v; break; }\n  }\n}\n\nreturn [{ json: {\n  ...input,\n  originalQuery: query,\n  detectedSection,\n  detectedSectionName,\n  detectedDay,\n  needsSection: !detectedSection,\n  needsDay: !detectedDay\n}}];"
+        "jsCode": "const input = $input.first().json;\nconst query = (input.query || '').trim();\nconst queryLower = query.toLowerCase();\n\n// Section mapping — longest keyword first to avoid short prefix collisions\nconst sectionMap = [\n  { keywords: ['software development b', 'software dev b', 'sd b'], tab: 'CSE_SD_Sec_B',       name: 'Software Dev (Sec B)' },\n  { keywords: ['software development', 'software dev', 'sd'],        tab: 'CSE_SD_Sec_A',       name: 'Software Dev (Sec A)' },\n  { keywords: ['aiml b', 'ai b'],                                    tab: 'CSE_AIML_Sec_B',     name: 'AI & ML (Sec B)' },\n  { keywords: ['aiml', 'ai', 'artificial intelligence', 'machine learning', 'ml'], tab: 'CSE_AIML_Sec_A', name: 'AI & ML (Sec A)' },\n  { keywords: ['cyber security b', 'cybersec b', 'cyber b', 'cys b'], tab: 'CSE_CyberSec_Sec_B', name: 'Cyber Security (Sec B)' },\n  { keywords: ['cyber security', 'cybersec', 'cyber', 'cys'],        tab: 'CSE_CyberSec_Sec_A', name: 'Cyber Security (Sec A)' },\n  { keywords: ['ibm'],                                                tab: 'CSE_IBM_Sec_A',      name: 'IBM (Sec A)' },\n  { keywords: ['xebia'],                                              tab: 'CSE_Xebia_Sec_A',   name: 'Xebia (Sec A)' },\n];\n\nlet detectedSection = null;\nlet detectedSectionName = null;\nfor (const m of sectionMap) {\n  if (m.keywords.some(k => queryLower.includes(k))) {\n    detectedSection = m.tab;\n    detectedSectionName = m.name;\n    break;\n  }\n}\n\n// Day detection\nconst dayMap = {\n  'monday': 'Monday', 'mon': 'Monday',\n  'tuesday': 'Tuesday', 'tue': 'Tuesday',\n  'wednesday': 'Wednesday', 'wed': 'Wednesday',\n  'thursday': 'Thursday', 'thu': 'Thursday',\n  'friday': 'Friday', 'fri': 'Friday',\n  'saturday': 'Saturday', 'sat': 'Saturday',\n};\n\nconst now = new Date();\nconst dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];\nconst todayWords = ['today', 'aaj'];\nconst tomorrowWords = ['tomorrow', 'kal'];\nlet detectedDay = null;\n\nif (todayWords.some(w => queryLower.includes(w))) {\n  detectedDay = dayNames[now.getDay()];\n} else if (tomorrowWords.some(w => queryLower.includes(w))) {\n  const tmp = new Date(now); tmp.setDate(tmp.getDate() + 1);\n  detectedDay = dayNames[tmp.getDay()];\n} else {\n  for (const [key, day] of Object.entries(dayMap)) {\n    if (queryLower.includes(key)) { detectedDay = day; break; }\n  }\n}\n\n// fullDayRange: SheetTab!A:H — Sheets node uses this directly\nconst fullDayRange = detectedSection ? `${detectedSection}!A:H` : null;\n\nreturn [{ json: {\n  ...input,\n  detectedSection,\n  detectedSectionName,\n  detectedDay,\n  needsSection: !detectedSection,\n  fullDayRange,\n} }];\n"
       },
       "id": "wa-preprocessor",
       "name": "Query Preprocessor",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1140, 400]
+      "position": [
+        1140,
+        400
+      ]
     },
     {
       "parameters": {
@@ -91,7 +117,10 @@
             {
               "leftValue": "={{ $json.needsSection }}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equals" }
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
             }
           ]
         }
@@ -100,17 +129,23 @@
       "name": "Has Section?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1360, 400]
+      "position": [
+        1360,
+        400
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const input = $input.first().json;\nreturn [{ json: {\n  ...input,\n  response: \"I couldn't identify your section.\\n\\nAvailable sections:\\n\\u2022 Sec A through Sec R\\n\\u2022 Sec SA through Sec SM\\n\\nExample:\\nMonday schedule for Sec A\\nToday's classes Sec SD\"\n}}];"
+        "jsCode": "const input = $input.first().json;\nreturn [{ json: {\n  ...input,\n  response: \"Which section's timetable do you want?\\n\\n\"\n    + \"\\u2022 SD \\u2014 Software Development\\n\"\n    + \"\\u2022 AIML \\u2014 AI & Machine Learning\\n\"\n    + \"\\u2022 CYS \\u2014 Cyber Security\\n\"\n    + \"\\u2022 IBM\\n\"\n    + \"\\u2022 Xebia\\n\\n\"\n    + \"Reply with section + day.\\nExample: CYS Monday\"\n} }];\n"
       },
       "id": "ask-section",
       "name": "Ask Section",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1580, 320]
+      "position": [
+        1580,
+        320
+      ]
     },
     {
       "parameters": {
@@ -131,7 +166,10 @@
       "name": "Google Sheets - Read Timetable",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [1580, 500],
+      "position": [
+        1580,
+        500
+      ],
       "credentials": {
         "googleApi": {
           "id": "hUoDZ9uB4WIQIviJ",
@@ -141,13 +179,16 @@
     },
     {
       "parameters": {
-        "jsCode": "const rows = $input.all().map(i => i.json);\nconst preprocessed = $('Query Preprocessor').first().json;\nconst requestedDay = preprocessed.detectedDay;\n\nconst slots = [\n  { col: 'Lecture 1 (8.00-8.50)', time: '8:00-8:50 AM' },\n  { col: 'Lecture 2 (8.50-9.40)', time: '8:50-9:40 AM' },\n  { col: 'Lecture 3 (9.40-10.30)', time: '9:40-10:30 AM' },\n  { col: 'Lecture 4 (10.30-11.20)', time: '10:30-11:20 AM' },\n  { col: 'Lecture 5 (11.20-12.05)', time: '11:20-12:05 PM' },\n  { col: 'Lecture 6 (12.05-12.50)', time: '12:05-12:50 PM' }\n];\n\nfunction formatDaySchedule(row) {\n  const day = row['Day/Time'] || '';\n  let lines = [`\\ud83d\\udcc5 *${day}*`];\n  for (const slot of slots) {\n    const val = (row[slot.col] || '').trim();\n    if (val && val !== 'N/A') {\n      lines.push(`\\u23f0 ${slot.time}\\n   \\ud83d\\udcda ${val}`);\n    } else {\n      lines.push(`\\u23f0 ${slot.time}\\n   Free Period`);\n    }\n  }\n  return lines.join('\\n');\n}\n\nlet formatted = [];\nif (requestedDay) {\n  const dayRow = rows.find(r => r['Day/Time'] && r['Day/Time'].toLowerCase() === requestedDay.toLowerCase());\n  if (dayRow) {\n    formatted.push(formatDaySchedule(dayRow));\n  } else {\n    formatted.push(`No schedule found for ${requestedDay}.`);\n  }\n} else {\n  for (const row of rows) {\n    if (row['Day/Time'] && row['Day/Time'] !== 'Day/Time') {\n      formatted.push(formatDaySchedule(row));\n    }\n  }\n}\n\nconst header = preprocessed.detectedSectionName\n  ? `\\ud83c\\udfeb JECRC Timetable\\n${preprocessed.detectedSectionName}\\n${'\\u2500'.repeat(20)}`\n  : '\\ud83c\\udfeb JECRC Timetable';\n\nconst response = `${header}\\n\\n${formatted.join('\\n\\n')}`;\n\nreturn [{ json: {\n  phoneNumber: preprocessed.phoneNumber,\n  phoneNumberId: preprocessed.phoneNumberId,\n  response\n}}];"
+        "jsCode": "// Format timetable data for WhatsApp (plain text + emoji)\n// Handles merged lab cells: carries forward value across consecutive blank slots\nconst rows = $input.all().map(i => i.json);\nconst preprocessed = $('Query Preprocessor').first().json;\nconst requestedDay = preprocessed.detectedDay;\n\nconst slots = [\n  { col: 'Lecture 1 (8.00-8.50)',   time: '8:00-8:50 AM'   },\n  { col: 'Lecture 2 (8.50-9.40)',   time: '8:50-9:40 AM'   },\n  { col: 'Lecture 3 (9.40-10.30)',  time: '9:40-10:30 AM'  },\n  { col: 'Lecture 4 (10.30-11.20)', time: '10:30-11:20 AM' },\n  { col: 'Lecture 5 (11.20-12.05)', time: '11:20-12:05 PM' },\n  { col: 'Lecture 6 (12.05-12.50)', time: '12:05-12:50 PM' },\n];\n\nfunction formatDaySchedule(row) {\n  const day = row['Day/Time'] || '';\n  const lines = ['📅 *' + day + '*'];\n  let lastVal = '';\n  for (const slot of slots) {\n    let val = (row[slot.col] || '').trim();\n    // Carry forward for merged lab/practical cells (up to 2 consecutive blanks)\n    if (!val && lastVal) {\n      val = lastVal + ' (cont.)';\n    } else {\n      lastVal = val || '';\n    }\n    if (val && val !== 'N/A') {\n      lines.push('⏰ ' + slot.time + '\\n   📚 ' + val);\n    } else {\n      lastVal = '';\n      lines.push('⏰ ' + slot.time + '\\n   Free Period');\n    }\n  }\n  return lines.join('\\n');\n}\n\nlet formatted = [];\nif (requestedDay) {\n  const dayRow = rows.find(r => r['Day/Time'] && r['Day/Time'].toLowerCase() === requestedDay.toLowerCase());\n  if (dayRow) {\n    formatted.push(formatDaySchedule(dayRow));\n  } else {\n    formatted.push('No schedule found for ' + requestedDay + '.');\n  }\n} else {\n  for (const row of rows) {\n    if (row['Day/Time'] && row['Day/Time'] !== 'Day/Time') {\n      formatted.push(formatDaySchedule(row));\n    }\n  }\n}\n\nconst header = preprocessed.detectedDay\n  ? '📊 ' + preprocessed.detectedDay + ' — ' + (preprocessed.detectedSectionName || preprocessed.detectedSection)\n  : '📊 Full Week — ' + (preprocessed.detectedSectionName || preprocessed.detectedSection);\n\nreturn [{ json: { ...preprocessed, response: header + '\\n\\n' + formatted.join('\\n\\n') } }];\n"
       },
       "id": "wa-formatter",
       "name": "Format Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1800, 500]
+      "position": [
+        1800,
+        500
+      ]
     },
     {
       "parameters": {
@@ -160,7 +201,10 @@
               "name": "Authorization",
               "value": "=Bearer EAAj1IabOkvYBRXsMnGnd9azwAMZCpgEnvAZCiJifXehWlF97bhheDZA8O1GIpET6SK6B1al6lUeSfwQ3NDE7YRiDPeexYtcWYR12d48qutKQ6CZBf50LWUNiZBT5kqISh8g4whZC3K1LZBlgXKE55AOcQrPBKU6oKNsS13qinkzieQtuqIi3Ckh8Dhh5C3EoPs06HgSRpp8iUgvdCCjHRxn1UyzZCiU5Gil8YJN9Jrv60MyZAVNwuglXXLxEit7wZAc2WPCbGjLmNRLisuHHLVqYt8fMQk"
             },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -172,64 +216,209 @@
       "name": "Send WhatsApp Reply",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2020, 400]
+      "position": [
+        2020,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.phoneNumber }}",
+              "rightValue": "919352365695",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "phone-whitelist",
+      "name": "Phone Whitelist Check",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1030,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nreturn [{ json: {\n  ...input,\n  response: '🔒 This bot is currently in testing.\\nAccess is restricted to registered users only.'\n} }];\n"
+      },
+      "id": "blocked-response",
+      "name": "Blocked Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1030,
+        240
+      ]
     }
   ],
   "connections": {
     "WhatsApp Messages Webhook": {
       "main": [
-        [{ "node": "Extract Message", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Extract Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Extract Message": {
       "main": [
-        [{ "node": "Acknowledge", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Acknowledge",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Acknowledge": {
       "main": [
-        [{ "node": "Should Skip?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Should Skip?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Should Skip?": {
       "main": [
         [],
-        [{ "node": "Unsupported Type?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Unsupported Type?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Unsupported Type?": {
       "main": [
-        [{ "node": "Send WhatsApp Reply", "type": "main", "index": 0 }],
-        [{ "node": "Query Preprocessor", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Phone Whitelist Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Query Preprocessor": {
       "main": [
-        [{ "node": "Has Section?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Has Section?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Has Section?": {
       "main": [
-        [{ "node": "Ask Section", "type": "main", "index": 0 }],
-        [{ "node": "Google Sheets - Read Timetable", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Ask Section",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Sheets - Read Timetable",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Ask Section": {
       "main": [
-        [{ "node": "Send WhatsApp Reply", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Google Sheets - Read Timetable": {
       "main": [
-        [{ "node": "Format Response", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Format Response": {
       "main": [
-        [{ "node": "Send WhatsApp Reply", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Phone Whitelist Check": {
+      "main": [
+        [
+          {
+            "node": "Query Preprocessor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Blocked Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Blocked Response": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
-  "settings": { "executionOrder": "v1" },
-  "meta": { "instanceId": "jecrc-timetable-chatbot" }
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "instanceId": "jecrc-timetable-chatbot"
+  }
 }
