@@ -13,7 +13,7 @@
       "name": "WhatsApp Messages Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [250, 300],
+      "position": [256, 304],
       "webhookId": "b2c3d4e5-f6a7-8901-bcde-f12345678901"
     },
     {
@@ -26,11 +26,11 @@
       "name": "Acknowledge",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [480, 200]
+      "position": [480, 208]
     },
     {
       "parameters": {
-        "jsCode": "const body = $input.first().json.body;\nconst entry  = body?.entry?.[0];\nconst change = entry?.changes?.[0]?.value;\nconst message = change?.messages?.[0];\nconst contact = change?.contacts?.[0];\n\nif (!message) return [{ json: { skip: true } }];\n\nconst base = {\n  skip: false,\n  isUnsupported: false,\n  isInteractive: false,\n  phoneNumber: message.from,\n  phoneNumberId: change.metadata.phone_number_id,\n  contactName: contact?.profile?.name || 'Student',\n  timestamp: message.timestamp,\n};\n\nif (message.type === 'interactive' && message.interactive?.type === 'list_reply') {\n  const r = message.interactive.list_reply;\n  return [{ json: { ...base, isInteractive: true, selectionId: r.id, selectionTitle: r.title, query: r.title } }];\n}\n\nif (message.type === 'interactive' && message.interactive?.type === 'button_reply') {\n  const r = message.interactive.button_reply;\n  return [{ json: { ...base, isInteractive: true, selectionId: r.id, selectionTitle: r.title, query: r.title } }];\n}\n\nif (message.type !== 'text') {\n  return [{ json: { ...base, isUnsupported: true, response: 'I only understand text messages and menu selections.' } }];\n}\n\nreturn [{ json: { ...base, query: message.text.body } }];"
+        "jsCode": "const body = $input.first().json.body;\nconst entry = body?.entry?.[0];\nconst change = entry?.changes?.[0]?.value;\nconst message = change?.messages?.[0];\nconst contact = change?.contacts?.[0];\n\nif (!message) return [{ json: { skip: true } }];\n\nconst base = {\n  skip: false,\n  isUnsupported: false,\n  isInteractive: false,\n  phoneNumber: message.from,\n  phoneNumberId: change.metadata.phone_number_id,\n  contactName: contact?.profile?.name || 'Student',\n  timestamp: message.timestamp,\n};\n\nif (message.type === 'interactive' && message.interactive?.type === 'list_reply') {\n  const r = message.interactive.list_reply;\n  return [{ json: { ...base, isInteractive: true, selectionId: r.id, selectionTitle: r.title, query: r.title } }];\n}\n\nif (message.type === 'interactive' && message.interactive?.type === 'button_reply') {\n  const r = message.interactive.button_reply;\n  return [{ json: { ...base, isInteractive: true, selectionId: r.id, selectionTitle: r.title, query: r.title } }];\n}\n\nif (message.type !== 'text') {\n  return [{ json: { ...base, isUnsupported: true, response: 'I only understand text messages and menu selections.' } }];\n}\n\nreturn [{ json: { ...base, query: message.text.body } }];"
       },
       "id": "extract-message",
       "name": "Extract Message",
@@ -50,7 +50,7 @@
       "name": "Should Skip?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [700, 400]
+      "position": [704, 400]
     },
     {
       "parameters": {
@@ -64,7 +64,7 @@
       "name": "Unsupported Type?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [920, 400]
+      "position": [928, 400]
     },
     {
       "parameters": {
@@ -78,7 +78,7 @@
       "name": "Is Interactive Reply?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1140, 400]
+      "position": [1150, 400]
     },
     {
       "parameters": {
@@ -88,7 +88,7 @@
       "name": "Parse Selection",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1360, 280]
+      "position": [1370, 280]
     },
     {
       "parameters": {
@@ -102,7 +102,7 @@
       "name": "Is Timetable Request?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1580, 280]
+      "position": [1590, 280]
     },
     {
       "parameters": {
@@ -112,7 +112,7 @@
       "name": "Query Preprocessor",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1360, 520]
+      "position": [1370, 520]
     },
     {
       "parameters": {
@@ -126,7 +126,7 @@
       "name": "Has Section?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1580, 520]
+      "position": [1590, 520]
     },
     {
       "parameters": {
@@ -136,7 +136,7 @@
       "name": "Ask Section",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1800, 440]
+      "position": [1810, 440]
     },
     {
       "parameters": {
@@ -149,7 +149,7 @@
       "name": "Google Sheets - Read Timetable",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [1800, 640],
+      "position": [1810, 640],
       "credentials": { "googleApi": { "id": "hUoDZ9uB4WIQIviJ", "name": "Google Sheets account" } }
     },
     {
@@ -160,7 +160,7 @@
       "name": "Format Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2020, 640]
+      "position": [2030, 640]
     },
     {
       "parameters": {
@@ -182,7 +182,7 @@
       "name": "Send WhatsApp Reply",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2240, 520]
+      "position": [2250, 520]
     },
     {
       "parameters": {
@@ -204,7 +204,7 @@
       "name": "Send Section Menu",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1800, 260]
+      "position": [1810, 260]
     },
     {
       "parameters": {
@@ -226,7 +226,7 @@
       "name": "Send Day Menu",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [2020, 440]
+      "position": [2030, 440]
     }
   ],
   "connections": {
