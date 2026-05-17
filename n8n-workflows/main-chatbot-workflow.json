@@ -10,9 +10,18 @@
         "options": {
           "responseHeaders": {
             "entries": [
-              { "name": "Access-Control-Allow-Origin", "value": "*" },
-              { "name": "Access-Control-Allow-Methods", "value": "POST, OPTIONS" },
-              { "name": "Access-Control-Allow-Headers", "value": "Content-Type" }
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
             ]
           }
         }
@@ -21,17 +30,23 @@
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [250, 300]
+      "position": [
+        250,
+        300
+      ]
     },
     {
       "parameters": {
-        "jsCode": "// ============================================\n// Module 2: Query Pre-processing & Intent Extraction\n// ============================================\nconst input = $input.first().json;\nconst query = (input.body?.query || input.query || '').trim();\nconst queryLower = query.toLowerCase();\n\n// --- Section Detection ---\n// Actual Google Sheet tabs: Sec-A to Sec-R, Sec-SA to Sec-SM\nconst validSections = [\n  'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','R','S',\n  'SA','SB','SC','SD','SE','SF','SG','SH','SI','SJ','SK','SL','SM'\n];\n\nlet detectedSection = null;\nlet detectedSectionName = null;\n\n// Try patterns like 'sec-sd', 'sec sd', 'section sd', 'sec a', just 'sd', 'sa'\nconst secMatch = queryLower.match(/(?:sec(?:tion)?[\\s-]*)([a-z]{1,2})\\b/);\nif (secMatch) {\n  const letter = secMatch[1].toUpperCase();\n  if (validSections.includes(letter)) {\n    detectedSection = `Sec-${letter}`;\n    detectedSectionName = `Section ${letter}`;\n  }\n}\n\n// --- Day Detection ---\nconst dayMap = {\n  'mon': 'Monday', 'monday': 'Monday',\n  'tue': 'Tuesday', 'tuesday': 'Tuesday',\n  'wed': 'Wednesday', 'wednesday': 'Wednesday',\n  'thu': 'Thursday', 'thursday': 'Thursday',\n  'fri': 'Friday', 'friday': 'Friday',\n  'sat': 'Saturday', 'saturday': 'Saturday'\n};\n\n// --- Holiday Detection ---\nconst holidays = [\n  { date: '2026-01-14', event: 'Makar Sankranti' },\n  { date: '2026-01-26', event: 'Republic Day' },\n  { date: '2026-02-15', event: 'Maha Shivratri' },\n  { date: '2026-03-02', event: 'Holi Break' },\n  { date: '2026-03-03', event: 'Holika Dahan' },\n  { date: '2026-03-04', event: 'Dhulandi' },\n  { date: '2026-03-21', event: 'Eid-Ul-Fitr' },\n  { date: '2026-03-26', event: 'Ram Navami' },\n  { date: '2026-03-31', event: 'Mahavir Jayanti' },\n  { date: '2026-04-14', event: 'Dr. Ambedkar Jayanti' },\n  { date: '2026-05-28', event: 'Bakr Id/Eid-Ul-Zuha' },\n  { date: '2026-08-15', event: 'Independence Day' },\n  { date: '2026-08-28', event: 'Raksha Bandhan' },\n  { date: '2026-09-04', event: 'Janmashtami' },\n  { date: '2026-10-02', event: 'Mahatma Gandhi Jayanti' },\n  { date: '2026-10-20', event: 'Dussehra' },\n  { date: '2026-10-29', event: 'Karwa Chauth' },\n  { date: '2026-11-06', event: 'Dhanteras' },\n  { date: '2026-11-07', event: 'Chhoti Deepawali' },\n  { date: '2026-11-08', event: 'Deepawali' },\n  { date: '2026-11-09', event: 'Vishwakarma Day/Goverdhan Pooja' },\n  { date: '2026-11-10', event: 'Deepawali Break' },\n  { date: '2026-11-11', event: 'Bhai Dhooj' },\n  { date: '2026-11-24', event: 'Guru Nanak Jayanti' },\n  { date: '2026-12-25', event: 'Christmas Day' }\n];\n\n// Detect day\nlet detectedDay = null;\nconst todayWords = ['today', 'aaj'];\nconst tomorrowWords = ['tomorrow', 'kal'];\nconst now = new Date();\n\nif (todayWords.some(w => queryLower.includes(w))) {\n  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];\n  detectedDay = days[now.getDay()];\n} else if (tomorrowWords.some(w => queryLower.includes(w))) {\n  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];\n  const tomorrow = new Date(now);\n  tomorrow.setDate(tomorrow.getDate() + 1);\n  detectedDay = days[tomorrow.getDay()];\n} else {\n  for (const [key, day] of Object.entries(dayMap)) {\n    if (queryLower.includes(key)) {\n      detectedDay = day;\n      break;\n    }\n  }\n}\n\n// Check holidays\nlet isHoliday = false;\nlet holidayEvent = null;\nconst todayStr = now.toISOString().split('T')[0];\nconst holiday = holidays.find(h => h.date === todayStr);\nif (holiday && todayWords.some(w => queryLower.includes(w))) {\n  isHoliday = true;\n  holidayEvent = holiday.event;\n}\n\nreturn [{\n  json: {\n    originalQuery: query,\n    detectedSection,\n    detectedSectionName,\n    detectedDay,\n    isHoliday,\n    holidayEvent,\n    needsSection: !detectedSection,\n    needsDay: !detectedDay,\n    timestamp: new Date().toISOString()\n  }\n}];"
+        "jsCode": "const input = $input.first().json;\nconst query = (input.body?.query || input.query || '').trim();\nconst queryLower = query.toLowerCase();\n\n// Section mapping: longest-match first to avoid 'ai' swallowing 'aiml b'\nconst sectionMap = [\n  { keywords: ['sec-sk', 'sec sk', 'section sk', 'sk'], tab: 'Sec-SK', name: 'Section SK' },\n  { keywords: ['software development b', 'software dev b', 'sd b'], tab: 'CSE_SD_Sec_B',       name: 'Software Dev (Sec B)' },\n  { keywords: ['software development', 'software dev', 'sd'],        tab: 'CSE_SD_Sec_A',       name: 'Software Dev (Sec A)' },\n  { keywords: ['aiml b', 'ai b', 'artificial intelligence b'],       tab: 'CSE_AIML_Sec_B',     name: 'AI & ML (Sec B)' },\n  { keywords: ['aiml', 'ai', 'artificial intelligence', 'machine learning', 'ml'], tab: 'CSE_AIML_Sec_A', name: 'AI & ML (Sec A)' },\n  { keywords: ['cyber security b', 'cybersec b', 'cyber b', 'cys b'], tab: 'CSE_CyberSec_Sec_B', name: 'Cyber Security (Sec B)' },\n  { keywords: ['cyber security', 'cybersec', 'cyber', 'cys'],        tab: 'CSE_CyberSec_Sec_A', name: 'Cyber Security (Sec A)' },\n  { keywords: ['ibm'],                                                tab: 'CSE_IBM_Sec_A',      name: 'IBM (Sec A)' },\n  { keywords: ['xebia'],                                              tab: 'CSE_Xebia_Sec_A',   name: 'Xebia (Sec A)' },\n];\n\nlet detectedSection = null;\nlet detectedSectionName = null;\nfor (const mapping of sectionMap) {\n  if (mapping.keywords.some(k => queryLower.includes(k))) {\n    detectedSection = mapping.tab;\n    detectedSectionName = mapping.name;\n    break;\n  }\n}\n\n// Day detection\nconst dayMap = {\n  'monday': 'Monday', 'mon': 'Monday',\n  'tuesday': 'Tuesday', 'tue': 'Tuesday',\n  'wednesday': 'Wednesday', 'wed': 'Wednesday',\n  'thursday': 'Thursday', 'thu': 'Thursday',\n  'friday': 'Friday', 'fri': 'Friday',\n  'saturday': 'Saturday', 'sat': 'Saturday',\n};\n\nconst now = new Date();\nconst dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];\nconst todayWords = ['today', 'aaj'];\nconst tomorrowWords = ['tomorrow', 'kal'];\nlet detectedDay = null;\n\nif (todayWords.some(w => queryLower.includes(w))) {\n  detectedDay = dayNames[now.getDay()];\n} else if (tomorrowWords.some(w => queryLower.includes(w))) {\n  const tmp = new Date(now);\n  tmp.setDate(tmp.getDate() + 1);\n  detectedDay = dayNames[tmp.getDay()];\n} else {\n  for (const [key, day] of Object.entries(dayMap)) {\n    if (queryLower.includes(key)) { detectedDay = day; break; }\n  }\n}\n\n// Holiday list\nconst holidays = [\n  { date: '2026-01-14', event: 'Makar Sankranti' },\n  { date: '2026-01-26', event: 'Republic Day' },\n  { date: '2026-02-15', event: 'Maha Shivratri' },\n  { date: '2026-03-02', event: 'Holi Break' },\n  { date: '2026-03-03', event: 'Holika Dahan' },\n  { date: '2026-03-04', event: 'Dhulandi' },\n  { date: '2026-03-21', event: 'Eid-Ul-Fitr' },\n  { date: '2026-03-26', event: 'Ram Navami' },\n  { date: '2026-03-31', event: 'Mahavir Jayanti' },\n  { date: '2026-04-14', event: 'Dr. Ambedkar Jayanti' },\n  { date: '2026-05-28', event: 'Bakr Id/Eid-Ul-Zuha' },\n  { date: '2026-08-15', event: 'Independence Day' },\n  { date: '2026-08-28', event: 'Raksha Bandhan' },\n  { date: '2026-09-04', event: 'Janmashtami' },\n  { date: '2026-10-02', event: 'Mahatma Gandhi Jayanti' },\n  { date: '2026-10-20', event: 'Dussehra' },\n  { date: '2026-10-29', event: 'Karwa Chauth' },\n  { date: '2026-11-06', event: 'Dhanteras' },\n  { date: '2026-11-07', event: 'Chhoti Deepawali' },\n  { date: '2026-11-08', event: 'Deepawali' },\n  { date: '2026-11-09', event: 'Vishwakarma Day/Goverdhan Pooja' },\n  { date: '2026-11-10', event: 'Deepawali Break' },\n  { date: '2026-11-11', event: 'Bhai Dhooj' },\n  { date: '2026-11-24', event: 'Guru Nanak Jayanti' },\n  { date: '2026-12-25', event: 'Christmas Day' },\n];\n\n// Holiday check — 'today' query\nlet isHoliday = false;\nlet holidayEvent = null;\nconst todayStr = now.toISOString().split('T')[0];\nif (todayWords.some(w => queryLower.includes(w))) {\n  const h = holidays.find(h => h.date === todayStr);\n  if (h) { isHoliday = true; holidayEvent = h.event; }\n}\n\n// Holiday check — specific detected day (nearest occurrence this/next week)\nif (!isHoliday && detectedDay) {\n  const targetDow = dayNames.indexOf(detectedDay);\n  const todayDow = now.getDay();\n  let diff = targetDow - todayDow;\n  if (diff < 0) diff += 7;\n  const targetDate = new Date(now);\n  targetDate.setDate(now.getDate() + diff);\n  const targetDateStr = targetDate.toISOString().split('T')[0];\n  const h = holidays.find(h => h.date === targetDateStr);\n  if (h) { isHoliday = true; holidayEvent = h.event; }\n}\n\n// Range: TabName!A:H — AI node will filter by day\nconst fullDayRange = detectedSection ? `${detectedSection}!A:H` : null;\n\nreturn [{\n  json: {\n    originalQuery: query,\n    detectedSection,\n    detectedSectionName,\n    detectedDay,\n    isHoliday,\n    holidayEvent,\n    needsSection: !detectedSection,\n    needsDay: !detectedDay,\n    fullDayRange,\n    timestamp: new Date().toISOString()\n  }\n}];"
       },
       "id": "query-preprocessor",
       "name": "Query Preprocessor",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [470, 300]
+      "position": [
+        470,
+        300
+      ]
     },
     {
       "parameters": {
@@ -40,7 +55,10 @@
             {
               "leftValue": "={{ $json.isHoliday }}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equals" }
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
             }
           ]
         }
@@ -49,7 +67,10 @@
       "name": "Is Holiday?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [690, 300]
+      "position": [
+        690,
+        300
+      ]
     },
     {
       "parameters": {
@@ -59,7 +80,10 @@
       "name": "Holiday Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [910, 180]
+      "position": [
+        910,
+        180
+      ]
     },
     {
       "parameters": {
@@ -68,7 +92,10 @@
             {
               "leftValue": "={{ $json.needsSection }}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equals" }
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
             }
           ]
         }
@@ -77,17 +104,23 @@
       "name": "Has Section?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [910, 420]
+      "position": [
+        910,
+        420
+      ]
     },
     {
       "parameters": {
-        "jsCode": "return [{\n  json: {\n    response: \"I couldn't identify your section. Which section are you in?\\n\\nAvailable sections:\\n• Sec A through Sec R\\n• Sec SA through Sec SM\\n\\nExample: \\\"Monday schedule for Sec A\\\" or \\\"Today's classes Sec SD\\\"\",\n    status: 'missing_section',\n    timestamp: new Date().toISOString()\n  }\n}];"
+        "jsCode": "return [{\n  json: {\n    response: \"I couldn't identify your section. Which section are you in?\\n\\nAvailable sections:\\n• SD (Software Development)\\n• AIML or AI (Artificial Intelligence & ML)\\n• CYS or Cyber (Cyber Security)\\n• IBM\\n• Xebia\\n\\nFor Sec B, add 'B' — e.g. \\\"SD B\\\" or \\\"Cyber B\\\"\\n\\nExample: \\\"Monday schedule for SD\\\" or \\\"Today's classes AIML\\\"\",\n    status: 'missing_section',\n    timestamp: new Date().toISOString()\n  }\n}];"
       },
       "id": "ask-section",
       "name": "Ask Section",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1130, 320]
+      "position": [
+        1130,
+        320
+      ]
     },
     {
       "parameters": {
@@ -107,7 +140,10 @@
       "name": "Google Sheets - Read Timetable",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [1130, 520],
+      "position": [
+        1130,
+        520
+      ],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "CONFIGURE_ME",
@@ -118,56 +154,149 @@
     },
     {
       "parameters": {
-        "jsCode": "// Format timetable data from Google Sheets into readable response\nconst rows = $input.all().map(i => i.json);\nconst preprocessed = $('Query Preprocessor').first().json;\nconst requestedDay = preprocessed.detectedDay;\n\n// Time slot labels (based on actual sheet columns)\nconst slots = [\n  { col: 'Lecture 1 (8.00-8.50)', time: '8:00-8:50 AM' },\n  { col: 'Lecture 2 (8.50-9.40)', time: '8:50-9:40 AM' },\n  { col: 'Lecture 3 (9.40-10.30)', time: '9:40-10:30 AM' },\n  { col: 'Lecture 4 (10.30-11.20)', time: '10:30-11:20 AM' },\n  { col: 'Lecture 5 (11.20-12.05)', time: '11:20-12:05 PM' },\n  { col: 'Lecture 6 (12.05-12.50)', time: '12:05-12:50 PM' }\n];\n\nfunction formatDaySchedule(row) {\n  const day = row['Day/Time'] || '';\n  let lines = [];\n  for (const slot of slots) {\n    const val = (row[slot.col] || '').trim();\n    if (val && val !== 'N/A') {\n      lines.push(`  \\u23f0 ${slot.time} \\u2014 \\ud83d\\udcda ${val}`);\n    } else {\n      lines.push(`  \\u23f0 ${slot.time} \\u2014 Free Period`);\n    }\n  }\n  return `**${day}**\\n${lines.join('\\n')}`;\n}\n\nlet formatted = [];\nif (requestedDay) {\n  // Filter to requested day\n  const dayRow = rows.find(r => r['Day/Time'] && r['Day/Time'].toLowerCase() === requestedDay.toLowerCase());\n  if (dayRow) {\n    formatted.push(formatDaySchedule(dayRow));\n  } else {\n    formatted.push(`No schedule found for ${requestedDay}.`);\n  }\n} else {\n  // All days (skip header row if present)\n  for (const row of rows) {\n    if (row['Day/Time'] && row['Day/Time'] !== 'Day/Time') {\n      formatted.push(formatDaySchedule(row));\n    }\n  }\n}\n\nreturn [{ json: { formattedData: formatted.join('\\n\\n'), rows } }];"
+        "jsCode": "const rows = $input.all().map(i => i.json);\nconst preprocessed = $('Query Preprocessor').first().json;\n\nconst systemInstruction = [\n  'You are a timetable assistant for JECRC University, Jaipur.',\n  'Format the provided timetable data into a clear, readable schedule.',\n  'Use emojis. Be concise. Mark empty slots as Free Period.',\n  'Include subject, faculty, and room number when available.',\n].join(' ');\n\nconst userPrompt = [\n  `Student asked: \"${preprocessed.originalQuery}\"`,\n  `Section: ${preprocessed.detectedSectionName}`,\n  `Day requested: ${preprocessed.detectedDay || 'Full week'}`,\n  '',\n  'Timetable data (JSON):',\n  JSON.stringify(rows, null, 2),\n  '',\n  'Format this into a clear, student-friendly schedule.',\n].join('\\n');\n\nconst geminiBody = JSON.stringify({\n  system_instruction: { parts: [{ text: systemInstruction }] },\n  contents: [{ role: 'user', parts: [{ text: userPrompt }] }],\n  generationConfig: { temperature: 0.1, maxOutputTokens: 512 },\n});\n\nreturn [{ json: { geminiBody, preprocessed } }];"
       },
-      "id": "ai-formatter",
-      "name": "AI Formatter (Gemini)",
+      "id": "gemini-prep",
+      "name": "Prepare Gemini Request",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1350, 520]
+      "position": [
+        1350,
+        520
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const input = $input.first().json;\nconst preprocessed = $('Query Preprocessor').first().json;\n\nlet response = input.formattedData || '';\n\nif (preprocessed.detectedSectionName && preprocessed.detectedDay) {\n  const header = `\\ud83d\\udcc5 ${preprocessed.detectedDay} \\u2014 ${preprocessed.detectedSectionName}`;\n  response = `${header}\\n\\n${response}`;\n} else if (preprocessed.detectedSectionName) {\n  response = `\\ud83d\\udcc5 Full Week \\u2014 ${preprocessed.detectedSectionName}\\n\\n${response}`;\n}\n\nif (!response.trim()) {\n  response = 'Sorry, I could not retrieve the timetable. Please try again with a specific section and day.';\n}\n\nreturn [{\n  json: {\n    response,\n    status: 'success',\n    section: preprocessed.detectedSection,\n    day: preprocessed.detectedDay,\n    timestamp: new Date().toISOString()\n  }\n}];"
+        "jsCode": "const geminiResponse = $input.first().json;\nconst preprocessed = $('Query Preprocessor').first().json;\n\nlet response = '';\ntry {\n  response = geminiResponse.candidates[0].content.parts[0].text || '';\n} catch (e) {\n  response = 'Sorry, I could not generate a response. Please try again.';\n}\n\nif (!response.trim()) {\n  response = 'Sorry, I could not retrieve the timetable. Please try again with a specific section and day.';\n}\n\nreturn [{\n  json: {\n    response,\n    status: 'success',\n    section: preprocessed.detectedSection,\n    day: preprocessed.detectedDay,\n    timestamp: new Date().toISOString()\n  }\n}];"
       },
       "id": "response-formatter",
       "name": "Response Formatter",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1570, 520]
+      "position": [
+        1790,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+        "authentication": "none",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $env.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.geminiBody }}"
+      },
+      "id": "call-gemini-api",
+      "name": "Call Gemini API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1570,
+        520
+      ]
     }
   ],
   "connections": {
     "Webhook Trigger": {
       "main": [
-        [{ "node": "Query Preprocessor", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Query Preprocessor",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Query Preprocessor": {
       "main": [
-        [{ "node": "Is Holiday?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Is Holiday?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Is Holiday?": {
       "main": [
-        [{ "node": "Holiday Response", "type": "main", "index": 0 }],
-        [{ "node": "Has Section?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Holiday Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Has Section?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Has Section?": {
       "main": [
-        [{ "node": "Ask Section", "type": "main", "index": 0 }],
-        [{ "node": "Google Sheets - Read Timetable", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Ask Section",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Sheets - Read Timetable",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Google Sheets - Read Timetable": {
       "main": [
-        [{ "node": "AI Formatter (Gemini)", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Prepare Gemini Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "AI Formatter (Gemini)": {
+    "Prepare Gemini Request": {
       "main": [
-        [{ "node": "Response Formatter", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Call Gemini API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Gemini API": {
+      "main": [
+        [
+          {
+            "node": "Response Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
