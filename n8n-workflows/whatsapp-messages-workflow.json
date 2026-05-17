@@ -195,7 +195,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const rows = $input.all().map(i => i.json);\n\nlet preprocessed = {};\ntry { preprocessed = $('Query Preprocessor').first().json; } catch(_) {}\nif (!preprocessed.detectedSection) {\n  try {\n    const ps = $('Parse Selection').first().json;\n    preprocessed = { ...ps, originalQuery: ps.query || ps.selectionTitle || ps.detectedSection + ' ' + ps.detectedDay };\n  } catch(_) {}\n}\n\nconst systemInstruction = 'You are a timetable assistant for JECRC University, Jaipur. Format the provided timetable data into a clear, readable WhatsApp message. Use emojis. Be concise. Mark empty slots as Free Period.';\n\nconst userPrompt = [\n  `Student asked: \"${preprocessed.originalQuery || 'timetable'}\"`,\n  `Section: ${preprocessed.detectedSectionName || preprocessed.detectedSection}`,\n  `Day requested: ${preprocessed.detectedDay || 'Full week'}`,\n  '',\n  'Timetable data (JSON):',\n  JSON.stringify(rows, null, 2),\n  '',\n  'Format this into a clear, student-friendly WhatsApp message.',\n].join('\\n');\n\nconst geminiBody = JSON.stringify({\n  system_instruction: { parts: [{ text: systemInstruction }] },\n  contents: [{ role: 'user', parts: [{ text: userPrompt }] }],\n  generationConfig: { temperature: 0.1, maxOutputTokens: 512 },\n});\n\nreturn [{ json: { geminiBody, preprocessed } }];"
+        "jsCode": "const rows = $input.all().map(i => i.json);\n\nlet preprocessed = {};\ntry { preprocessed = $('Query Preprocessor').first().json; } catch(_) {}\nif (!preprocessed.detectedSection) {\n  try {\n    const ps = $('Parse Selection').first().json;\n    preprocessed = { ...ps, originalQuery: ps.query || ps.selectionTitle || ps.detectedSection + ' ' + ps.detectedDay };\n  } catch(_) {}\n}\n\nconst systemInstruction = 'You are a timetable assistant for JECRC University, Jaipur. Format the provided timetable data into a clear, readable WhatsApp message. Use emojis. Be concise. Mark empty slots as Free Period.';\n\nconst userPrompt = [\n  `Student asked: \"${preprocessed.originalQuery || 'timetable'}\"`,\n  `Section: ${preprocessed.detectedSectionName || preprocessed.detectedSection}`,\n  `Day requested: ${preprocessed.detectedDay || 'Full week'}`,\n  '',\n  'Timetable data (JSON):',\n  JSON.stringify(rows, null, 2),\n  '',\n  'Format this into a clear, student-friendly WhatsApp message.',\n].join('\\n');\n\nconst geminiBody = JSON.stringify({\n  system_instruction: { parts: [{ text: systemInstruction }] },\n  contents: [{ role: 'user', parts: [{ text: userPrompt }] }],\n  generationConfig: { temperature: 0.1, maxOutputTokens: 512 },\n});\n\nconst geminiKey = $env.GEMINI_API_KEY || '';\n\nreturn [{ json: { geminiBody, geminiKey, preprocessed } }];"
       },
       "id": "prepare-gemini",
       "name": "Prepare Gemini Request",
@@ -209,7 +209,7 @@
         "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "key", "value": "={{ $env.GEMINI_API_KEY }}" }]
+          "parameters": [{ "name": "key", "value": "={{ $json.geminiKey }}" }]
         },
         "sendBody": true,
         "contentType": "raw",
