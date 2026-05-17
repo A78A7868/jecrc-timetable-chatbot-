@@ -1,0 +1,104 @@
+{
+  "id": "new-whatsapp",
+  "name": "JECRC WhatsApp - Menu Flow",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "whatsapp", "responseMode": "responseNode", "options": {} },
+      "id": "webhook", "name": "WhatsApp Webhook", "type": "n8n-nodes-base.webhook", "typeVersion": 2, "position": [250, 300]
+    },
+    {
+      "parameters": { "respondWith": "text", "responseBody": "OK", "options": { "responseCode": 200 } },
+      "id": "ack", "name": "Acknowledge", "type": "n8n-nodes-base.respondToWebhook", "typeVersion": 1, "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body;\nconst entry = body?.entry?.[0];\nconst change = entry?.changes?.[0]?.value;\nconst message = change?.messages?.[0];\nconst contact = change?.contacts?.[0];\n\nif (!message) return [{ json: { skip: true } }];\n\nconst base = { skip: false, isInteractive: false, phoneNumber: message.from, phoneNumberId: change.metadata.phone_number_id, contactName: contact?.profile?.name || 'Student' };\n\nif (message.type === 'interactive') {\n  const r = message.interactive?.list_reply || message.interactive?.button_reply;\n  return [{ json: { ...base, isInteractive: true, selectionId: r?.id } }];\n}\n\nreturn [{ json: { ...base, query: message.text?.body } }];"
+      },
+      "id": "extract", "name": "Extract Message", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [700, 300]
+    },
+    {
+      "parameters": { "conditions": { "conditions": [{ "leftValue": "={{ $json.skip }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }] } },
+      "id": "skip-check", "name": "Should Skip?", "type": "n8n-nodes-base.if", "typeVersion": 2, "position": [920, 300]
+    },
+    {
+      "parameters": { "conditions": { "conditions": [{ "leftValue": "={{ $json.isInteractive }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }] } },
+      "id": "interactive-check", "name": "Is Interactive?", "type": "n8n-nodes-base.if", "typeVersion": 2, "position": [1140, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst id = (input.selectionId || '').trim();\n\n// User selected section only (SECTION|Sec-SD) - send day menu\nif (id.startsWith('SECTION|')) {\n  const tab = id.replace('SECTION|', '');\n  const labels = { 'Sec-SD': 'Software Dev', 'Sec-SA': 'AI & ML', 'Sec-SC': 'Cyber Security', 'Sec-SI': 'IBM', 'Sec-SX': 'Xebia', 'Sec-SK': 'Section SK' };\n  return [{ json: { ...input, section: tab, sectionName: labels[tab] || tab, hasDay: false } }];\n}\n\n// User selected day (Sec-SD|Monday) - get timetable\nconst parts = id.split('|');\nif (parts.length === 2) {\n  const labels = { 'Sec-SD': 'Software Dev', 'Sec-SA': 'AI & ML', 'Sec-SC': 'Cyber Security', 'Sec-SI': 'IBM', 'Sec-SX': 'Xebia', 'Sec-SK': 'Section SK' };\n  return [{ json: { ...input, section: parts[0], sectionName: labels[parts[0]] || parts[0], day: parts[1], hasDay: true } }];\n}\n\nreturn [{ json: { ...input, section: null } }];"
+      },
+      "id": "parse-selection", "name": "Parse Selection", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [1360, 180]
+    },
+    {
+      "parameters": { "conditions": { "conditions": [{ "leftValue": "={{ $json.hasDay }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }] } },
+      "id": "has-day-check", "name": "Has Day?", "type": "n8n-nodes-base.if", "typeVersion": 2, "position": [1580, 180]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst query = (input.query || '').toLowerCase();\n\nconst sectionMap = [\n  { keywords: ['sd'], tab: 'Sec-SD', name: 'Software Dev' },\n  { keywords: ['aiml', 'ai', 'ml'], tab: 'Sec-SA', name: 'AI & ML' },\n  { keywords: ['cyber', 'cys'], tab: 'Sec-SC', name: 'Cyber Security' },\n  { keywords: ['ibm'], tab: 'Sec-SI', name: 'IBM' },\n  { keywords: ['xebia'], tab: 'Sec-SX', name: 'Xebia' },\n  { keywords: ['sk', 'section sk'], tab: 'Sec-SK', name: 'Section SK' }\n];\n\nlet section = null, sectionName = null;\nfor (const m of sectionMap) { if (m.keywords.some(k => query.includes(k))) { section = m.tab; sectionName = m.name; break; } }\n\nconst dayMap = { 'monday': 'Monday', 'tuesday': 'Tuesday', 'wednesday': 'Wednesday', 'thursday': 'Thursday', 'friday': 'Friday', 'saturday': 'Saturday' };\nlet day = null;\nfor (const [k,v] of Object.entries(dayMap)) { if (query.includes(k)) { day = v; break; } }\n\nreturn [{ json: { ...input, section, sectionName, day, needsSection: !section } }];"
+      },
+      "id": "preprocess", "name": "Query Preprocessor", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [1360, 420]
+    },
+    {
+      "parameters": { "conditions": { "conditions": [{ "leftValue": "={{ $json.needsSection }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }] } },
+      "id": "section-check", "name": "Has Section?", "type": "n8n-nodes-base.if", "typeVersion": 2, "position": [1580, 420]
+    },
+    {
+      "parameters": { "authentication": "serviceAccount", "documentId": { "__rl": true, "value": "https://docs.google.com/spreadsheets/d/1IvCqMa-qFW4dxjMVZAeZwgLb7kKaoA9hUjsNK0M_890/edit", "mode": "url" }, "sheetName": { "__rl": true, "value": "={{ $json.section }}", "mode": "name" }, "options": {} },
+      "id": "sheets", "name": "Read Timetable", "type": "n8n-nodes-base.googleSheets", "typeVersion": 4.5, "position": [1800, 420],
+      "credentials": { "googleApi": { "id": "hUoDZ9uB4WIQIviJ", "name": "Google Sheets account" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json);\nconst data = $('Query Preprocessor').first().json;\n\nconst dayRow = rows.find(r => r['Day/Time']?.toLowerCase() === data.day?.toLowerCase());\n\nif (!dayRow || !data.day) return [{ json: { response: 'No timetable found for ' + (data.day || 'this day') } }];\n\nlet text = `📅 *${data.day} - ${data.sectionName}*\\n\\n`;\nconst slots = [{ col: 'Lecture 1 (8.00-8.50)', time: '8:00-8:50' },{ col: 'Lecture 2 (8.50-9.40)', time: '8:50-9:40' },{ col: 'Lecture 3 (9.40-10.30)', time: '9:40-10:30' },{ col: 'Lecture 4 (10.30-11.20)', time: '10:30-11:20' },{ col: 'Lecture 5 (11.20-12.05)', time: '11:20-12:05' },{ col: 'Lecture 6 (12.05-12.50)', time: '12:05-12:50' }];\n\nfor (const slot of slots) {\n  const val = (dayRow[slot.col] || '').trim();\n  text += (val && val !== 'N/A') ? `⏰ ${slot.time}\\n📚 ${val}\\n\\n` : `⏰ ${slot.time}\\n🆓 Free\\n\\n`;\n}\n\nreturn [{ json: { response: text } }];"
+      },
+      "id": "formatter", "name": "Format Response", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [2020, 420]
+    },
+    {
+      "parameters": {
+        "method": "POST", "url": "=https://graph.facebook.com/v18.0/{{ $json.phoneNumberId }}/messages", "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Authorization", "value": "={{ $env.WHATSAPP_API_TOKEN }}" },{ "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true, "specifyBody": "json", "jsonBody": "={{ { messaging_product: 'whatsapp', to: $json.phoneNumber, type: 'text', text: { body: $json.response } } }}", "options": {}
+      },
+      "id": "send-reply", "name": "Send Reply", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2, "position": [2240, 420]
+    },
+    {
+      "parameters": {
+        "method": "POST", "url": "=https://graph.facebook.com/v18.0/{{ $json.phoneNumberId }}/messages", "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Authorization", "value": "={{ $env.WHATSAPP_API_TOKEN }}" },{ "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true, "specifyBody": "json",
+        "jsonBody": "={{ { messaging_product: 'whatsapp', to: $json.phoneNumber, type: 'interactive', interactive: { type: 'list', header: { type: 'text', text: '📅 Select Section' }, body: { text: 'Choose your section:' }, action: { button: 'Choose Section', sections: [{ title: 'Sections', rows: [{ id: 'SECTION|Sec-SD', title: '📚 SD - Software Dev' },{ id: 'SECTION|Sec-SA', title: '🤖 AIML - AI & ML' },{ id: 'SECTION|Sec-SC', title: '🔒 CYS - Cyber' },{ id: 'SECTION|Sec-SI', title: '💼 IBM' },{ id: 'SECTION|Sec-SX', title: '💻 Xebia' },{ id: 'SECTION|Sec-SK', title: '⭐ SK - Section SK' }] }] } } } }}",
+        "options": {}
+      },
+      "id": "menu-section", "name": "Send Section Menu", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.1, "position": [1800, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST", "url": "=https://graph.facebook.com/v18.0/{{ $json.phoneNumberId }}/messages", "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Authorization", "value": "={{ $env.WHATSAPP_API_TOKEN }}" },{ "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true, "specifyBody": "json",
+        "jsonBody": "={{ { messaging_product: 'whatsapp', to: $json.phoneNumber, type: 'interactive', interactive: { type: 'list', header: { type: 'text', text: '📅 ' + $json.sectionName }, body: { text: 'Select day for ' + $json.sectionName + ':' }, action: { button: 'Choose Day', sections: [{ title: 'Days', rows: [{ id: $json.section + '|Monday', title: 'Monday' },{ id: $json.section + '|Tuesday', title: 'Tuesday' },{ id: $json.section + '|Wednesday', title: 'Wednesday' },{ id: $json.section + '|Thursday', title: 'Thursday' },{ id: $json.section + '|Friday', title: 'Friday' },{ id: $json.section + '|Saturday', title: 'Saturday' }] }] } } } }}",
+        "options": {}
+      },
+      "id": "menu-day", "name": "Send Day Menu", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.1, "position": [2020, 200]
+    }
+  ],
+  "connections": {
+    "WhatsApp Webhook": { "main": [[{ "node": "Extract Message", "type": "main", "index": 0 }]] },
+    "Extract Message": { "main": [[{ "node": "Acknowledge", "type": "main", "index": 0 }]] },
+    "Acknowledge": { "main": [[{ "node": "Should Skip?", "type": "main", "index": 0 }]] },
+    "Should Skip?": { "main": [[], [{ "node": "Is Interactive?", "type": "main", "index": 0 }]] },
+    "Is Interactive?": { "main": [[{ "node": "Parse Selection", "type": "main", "index": 0 }], [{ "node": "Query Preprocessor", "type": "main", "index": 0 }]] },
+    "Parse Selection": { "main": [[{ "node": "Has Day?", "type": "main", "index": 0 }]] },
+    "Has Day?": { "main": [[{ "node": "Read Timetable", "type": "main", "index": 0 }], [{ "node": "Send Day Menu", "type": "main", "index": 0 }]] },
+    "Query Preprocessor": { "main": [[{ "node": "Has Section?", "type": "main", "index": 0 }]] },
+    "Has Section?": { "main": [[{ "node": "Send Section Menu", "type": "main", "index": 0 }], [{ "node": "Read Timetable", "type": "main", "index": 0 }]] },
+    "Read Timetable": { "main": [[{ "node": "Format Response", "type": "main", "index": 0 }]] },
+    "Format Response": { "main": [[{ "node": "Send Reply", "type": "main", "index": 0 }]] },
+    "Send Section Menu": { "main": [[{ "node": "Send Reply", "type": "main", "index": 0 }]] },
+    "Send Day Menu": { "main": [[{ "node": "Send Reply", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "meta": { "instanceId": "jecrc-whatsapp-menu" }
+}
