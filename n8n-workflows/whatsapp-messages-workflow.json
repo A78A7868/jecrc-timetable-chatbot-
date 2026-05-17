@@ -181,6 +181,41 @@
         },
         "options": {}
       },
+      {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "geminiKey",
+              "name": "geminiKey",
+              "value": "={{ $env.GEMINI_API_KEY }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-api-keys",
+      "name": "Set API Keys",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2440, 200]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1IvCqMa-qFW4dxjMVZAeZwgLb7kKaoA9hUjsNK0M_890/edit",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $json.detectedSection }}",
+          "mode": "name"
+        },
+        "options": {}
+      },
       "id": "wa-sheets-read",
       "name": "Google Sheets - Read Timetable",
       "type": "n8n-nodes-base.googleSheets",
@@ -209,7 +244,7 @@
         "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "key", "value": "={{ $env.GEMINI_API_KEY }}" }]
+          "parameters": [{ "name": "key", "value": "={{ $json.geminiKey }}" }]
         },
         "sendBody": true,
         "contentType": "raw",
@@ -333,7 +368,7 @@
     },
     "Is Timetable Request?": {
       "main": [
-        [{ "node": "Google Sheets - Read Timetable", "type": "main", "index": 0 }],
+        [{ "node": "Set API Keys", "type": "main", "index": 0 }],
         [{ "node": "Send Day Menu", "type": "main", "index": 0 }]
       ]
     },
@@ -357,12 +392,15 @@
     },
     "Has Day?": {
       "main": [
-        [{ "node": "Google Sheets - Read Timetable", "type": "main", "index": 0 }],
+        [{ "node": "Set API Keys", "type": "main", "index": 0 }],
         [{ "node": "Send Day Menu", "type": "main", "index": 0 }]
       ]
     },
     "Google Sheets - Read Timetable": {
-      "main": [[{ "node": "Prepare Gemini Request", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "Set API Keys", "type": "main", "index": 0 }]]
+    },
+    "Set API Keys": {
+      "main": [[{ "node": "Google Sheets - Read Timetable", "type": "main", "index": 0 }]]
     },
     "Prepare Gemini Request": {
       "main": [[{ "node": "Call Gemini API", "type": "main", "index": 0 }]]
