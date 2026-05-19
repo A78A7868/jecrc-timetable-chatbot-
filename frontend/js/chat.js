@@ -3,7 +3,7 @@
  * Handles user input, webhook communication, and response rendering.
  */
 
-const WEBHOOK_URL = 'http://localhost:5678/webhook/chatbot';
+const WEBHOOK_URL = window.location.protocol + '//' + window.location.host + '/webhook/chatbot';
 
 const chatMessages = document.getElementById('chatMessages');
 const chatForm = document.getElementById('chatForm');
