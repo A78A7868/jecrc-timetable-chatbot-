@@ -28,5 +28,6 @@ logs/
 credentials.json
 token.json
 service-account.json
+clean-key.txt
 *.pem
 *.key
