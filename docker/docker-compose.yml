@@ -17,6 +17,7 @@ services:
       - WEBHOOK_URL=${WEBHOOK_URL:-http://localhost:5678}
       - GENERIC_TIMEZONE=Asia/Kolkata
       - TZ=Asia/Kolkata
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
     volumes:
       - n8n_data:/home/node/.n8n
     networks:
