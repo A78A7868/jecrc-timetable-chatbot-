@@ -1,19 +1,11 @@
 # n8n Workflows
 
-## Which file to use
+## Production workflow
 
-### `main-chatbot-workflow.json` — Development / Setup
-Use this when setting up the project from scratch.
-- Google Sheets: OAuth2 auth, credential ID `CONFIGURE_ME` (replace with your own)
-- Sheets reference: reads `$env.GOOGLE_SHEETS_SPREADSHEET_ID` via env var
-- Gemini: calls API via HTTP node using `$env.GEMINI_API_KEY`
-- Section detection: keyword map (SD, AIML, CYS, IBM, Xebia)
-
-### `main-chatbot-workflow-deployed.json` — Production Snapshot
-Exported from the live running n8n instance. Kept here for backup/recovery.
-- Google Sheets: Service Account auth, real credential ID `hUoDZ9uB4WIQIviJ`
+**`main-chatbot-workflow-deployed.json`** — the deployed workflow, exported from the live n8n instance.
+- Google Sheets: Service Account auth, credential ID `hUoDZ9uB4WIQIviJ`
 - Sheets reference: hardcoded spreadsheet URL
-- Gemini: handled inside "AI Formatter" Code node
+- Gemini: "AI Formatter" Code node
 - Section detection: regex (Sec-A through Sec-SM)
 
 **Do not share this file publicly** — it contains real credential IDs.
@@ -21,8 +13,8 @@ Exported from the live running n8n instance. Kept here for backup/recovery.
 ## Import steps
 
 1. Open n8n at `http://localhost:5678`
-2. Workflows → Import from file → select `main-chatbot-workflow.json`
-3. Open the "Google Sheets - Read Timetable" node → assign your OAuth2 credential
+2. Workflows → Import from file → select `main-chatbot-workflow-deployed.json`
+3. Confirm the Google Sheets credential is linked (Service Account type)
 4. Toggle workflow to **Active**
 
 ## Other files
