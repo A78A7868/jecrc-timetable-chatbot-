@@ -114,13 +114,14 @@ docker-compose up -d
 
 ## Supported Sections
 
-| Abbreviation      | Full Name                | Sheet Tab           |
-|-------------------|--------------------------|---------------------|
-| SD                | Software Development     | CSE_SD_Sec_A        |
-| AI / AIML         | AI & Machine Learning    | CSE_AIML_Sec_A      |
-| CYS               | Cyber Security           | CSE_CyberSec_Sec_A  |
-| IBM               | IBM Specialization       | CSE_IBM_Sec_A       |
-| Xebia             | Xebia Specialization     | CSE_Xebia_Sec_A     |
+Sheet tabs follow the pattern `Sec-<code>`.
+
+| Code range        | Sheet tabs                  |
+|-------------------|-----------------------------|
+| A – R (skips Q)   | `Sec-A`, `Sec-B`, … `Sec-R` |
+| SA – SM           | `Sec-SA`, `Sec-SB`, … `Sec-SM` |
+
+Query formats accepted: `sec-sd`, `section sd`, `sec a`, or standalone 2-letter codes like `sd`, `sa`.
 
 ## Sample Queries
 
