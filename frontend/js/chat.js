@@ -61,7 +61,7 @@ function appendMessage(text, sender) {
 
     messageDiv.innerHTML = `
         <div class="message-content">
-            <p>${formatResponse(text)}</p>
+            ${formatResponse(text)}
         </div>
         <span class="message-time">${now}</span>
     `;
@@ -153,8 +153,17 @@ function renderTable(lines) {
     return html + '</table>';
 }
 
+function escapeHtml(s) {
+    return s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 function inlineFmt(text) {
-    return text
+    return escapeHtml(text)
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
         .replace(/`([^`]+)`/g, '<code>$1</code>');
